@@ -11,9 +11,33 @@ module Gaussian_type
     real(idp) , allocatable  :: coefs(:) 
     real(idp) , allocatable  :: norm(:)
   contains
+    procedure :: initialize
     procedure :: normalize
   end type
 contains
+  subroutine initialize(self, origin, power, exps, coefs)
+  class(contrct_Gaussian) :: self
+
+    real(idp) , dimension(3), intent(in) :: origin
+    integer   , dimension(3), intent(in) :: power
+    real(idp) , intent(in)  :: exps(:)
+    real(idp) , intent(in)  :: coefs(:) 
+
+    integer     :: num
+
+    num = size(exps)
+    !check size of inputs:
+    if(num < 1) stop 'size of exps is not correct'
+    if(num /= size(coefs)) stop 'size of coefs is not compatible with exps'
+
+    self%num = num
+    self%origin = origin
+    self%power  = power
+    allocate(self%exps, source = exps)
+    allocate(self%coefs, source = coefs)
+    allocate(self%norm(num))
+  end subroutine
+
   subroutine  normalize(self)
   class(contrct_Gaussian) :: self
     real(idp) :: norm
