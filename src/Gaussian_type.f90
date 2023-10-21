@@ -36,6 +36,7 @@ contains
     allocate(self%exps, source = exps)
     allocate(self%coefs, source = coefs)
     allocate(self%norm(num))
+    call self%normalize()
   end subroutine
 
   subroutine  normalize(self)

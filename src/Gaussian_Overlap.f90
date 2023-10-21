@@ -1,6 +1,7 @@
 module Gaussian_overlap
     use precision, only : idp, i4
     use constants, only : pi
+    use Gaussian_type
     implicit none
     
     
@@ -51,7 +52,7 @@ contains
 
 
     !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
-    !! Evaluation of overlap of two Gaussians on output
+    !! Evaluation of overlap of two primitive Gaussians on output
     !! Input : a, b (real=8) :: exponents of the two Gaussians
     !! lmn1,lmn2 (integer)   :: array dimensioned 3, powers or orbital angular momentum of
     !!                       :: the two Gaussians in x, y, z
@@ -76,5 +77,27 @@ contains
         overlap = product(S) * (sqrt (pi/(a + b)))** 3
 
         end function
+    !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+    !! Evaluates overlap between two contracted Gaussians
+    !!    Output (real=8) :: overlap
+    !!    Input: a, b (type(contrct_Gaussian))
+    !!    a: contracted Gaussian 'a', contrct_Gaussian object
+    !!    b: contracted Gaussian 'b', contrct_Gaussian object
+    !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+    function contracted_Gaussian_overlap(a,b) result(overlap)
+    
+        type(contrct_Gaussian) :: a, b
+        real(idp) :: overlap
+
+        integer :: ia, ib
+        overlap = 0.d0
+        do ia = 1, a%num
+            do ib = 1, b%num
+                overlap = overlap + a%norm(ia) * b%norm(ib) * a%coefs(ia) * b%coefs(ib) &
+                                  * Analytic_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
+            end do
+        end do
+
+    end function
 
 end module Gaussian_overlap
