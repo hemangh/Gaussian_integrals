@@ -59,7 +59,7 @@ contains
     !! A, B (real=8)         :: array dimensioned 3, coordinates of the origins of the two 
     !!                          Gaussians
     !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!! 
-    function Analytic_Gaussian_Overlap_Integral (a, lmn1, coord_A, b, lmn2, coord_B) result (overlap)
+    function primitive_Gaussian_Overlap_Integral (a, lmn1, coord_A, b, lmn2, coord_B) result (overlap)
 
         real(idp) :: a, b, coord_A(3), coord_B(3)
         integer   :: lmn1(3), lmn2(3)
@@ -94,7 +94,7 @@ contains
         do ia = 1, a%num
             do ib = 1, b%num
                 overlap = overlap + a%norm(ia) * b%norm(ib) * a%coefs(ia) * b%coefs(ib) &
-                                  * Analytic_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
+                                  * primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
             end do
         end do
 
