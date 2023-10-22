@@ -7,7 +7,20 @@ module nuclear_attrraction_integral
     implicit none
     
 contains
-
+!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+! Returns the Coulomb auxiliary Hermite integrals
+! Returns a real(kind=8) val.
+! Arguments:
+! t,u,v:
+! order of Coulomb Hermite derivative in x,y,z
+! (see defs in Helgaker and Taylor)
+! n:
+! order of Boys function
+! PCx,y,z: Cartesian vector distance between Gaussian
+! composite center P and nuclear center C
+! RPC:
+! Distance between P and C
+!!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
 recursive function Couloumb_Hermite_integral (t,u,v,n,p,PCx,PCy,PCz,RPC) result(val)
     integer, intent(in) :: t, u, v, n
     real(idp), intent(in) :: p, PCx, PCy, PCz, RPC
@@ -60,15 +73,15 @@ end function
 ! C:
 ! 3-d array containing origin of nuclear center 'C'
 !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
-subroutine primitive_Gaussian_nuclear_attraction(exp_a, pow_a, origin_a, exp_b, pow_b, origin_b, C, result)
+function primitive_Gaussian_nuclear_attraction(exp_a, pow_a, origin_a, exp_b, pow_b, origin_b, C) result(val)
     
-    real(idp), intent(in) :: exp_a, exp_b
-    integer, intent(in) :: pow_a(3), pow_b(3)
-    real(idp), intent(in) :: origin_a(3), origin_b(3), C(3)
-    real(idp), intent(out) :: result
+    real(idp) :: exp_a, exp_b
+    integer   :: pow_a(3), pow_b(3)
+    real(idp) :: origin_a(3), origin_b(3), C(3)
+    real(idp) :: val
   
     integer :: l1, m1, n1, l2, m2, n2, t, u, v
-    real(idp) :: gamma, RPC, val, P(3)
+    real(idp) :: gamma, RPC, P(3)
     real(idp) :: E1, E2, E3, RVal
   
     l1 = pow_a(1)
@@ -96,8 +109,32 @@ subroutine primitive_Gaussian_nuclear_attraction(exp_a, pow_a, origin_a, exp_b, 
     end do
   
     val = val * 2 * pi / gamma
-    result = val
-  end subroutine primitive_Gaussian_nuclear_attraction
+    
+end function primitive_Gaussian_nuclear_attraction
   
+  !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+  !! Evaluates nuclear attraction between two contracted Gaussians
+  !!    Output (real=8) :: integral
+  !!    Input: a, b (type(contrct_Gaussian))
+  !!    a: contracted Gaussian 'a', contrct_Gaussian object
+  !!    b: contracted Gaussian 'b', contrct_Gaussian object
+  !!    C: 3-d (real=8) array, center of nucleus
+  !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+  function contracted_Gaussian_overlap(a,b,C) result(integral)
+    
+    type(contrct_Gaussian) :: a, b
+    real(idp) :: C(3)
+    real(idp) :: integral
+
+    integer :: ia, ib
+    integral = 0.d0
+    do ia = 1, a%num
+        do ib = 1, b%num
+            integral = integral + a%norm(ia) * b%norm(ib) * a%coefs(ia) * b%coefs(ib) &
+                    * primitive_Gaussian_nuclear_attraction (a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin, C)
+        end do
+    end do
+
+end function
 
 end module nuclear_attrraction_integral
