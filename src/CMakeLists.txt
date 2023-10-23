@@ -9,6 +9,7 @@ target_sources(Gaussian_integrals_lib
     ${CMAKE_CURRENT_LIST_DIR}/kinetic_integral.f90
     ${CMAKE_CURRENT_LIST_DIR}/boys_function.f90
     ${CMAKE_CURRENT_LIST_DIR}/nuclear_attraction_integral.f90
+    ${CMAKE_CURRENT_LIST_DIR}/electron_repulsion_integral.f90
     )
 
 
