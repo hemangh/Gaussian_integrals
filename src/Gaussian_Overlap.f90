@@ -7,8 +7,7 @@ module Gaussian_overlap
     
 
 contains
-    
-    recursive function Hermite_Gaussian_coefficients(l1,l2,num_nodes,distance,exp1,exp2) result(E)
+    !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
     ! Recursive definition of Hermite Gaussian expansion coefficients.
     ! Returns a real double.
     ! l1,l2: orbital angular momentum number on Gaussian '2' and '1'
@@ -17,6 +16,8 @@ contains
     ! distance: distance between origins of Gaussian '1' and '2'
     ! exp1: orbital exponent on Gaussian '1' (e.g. alpha in the text)
     ! exp2: orbital exponent on Gaussian '2' (e.g. beta in the text)
+    !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+    recursive function Hermite_Gaussian_coefficients(l1,l2,num_nodes,distance,exp1,exp2) result(E)
     
     integer(i4) :: l1,l2
     integer(i4) :: num_nodes
@@ -94,7 +95,7 @@ contains
         do ia = 1, a%num
             do ib = 1, b%num
                 overlap = overlap + a%norm(ia) * b%norm(ib) * a%coefs(ia) * b%coefs(ib) &
-                                  * primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
+                * primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
             end do
         end do
 
