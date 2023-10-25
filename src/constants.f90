@@ -4,7 +4,8 @@ module constants
 
   integer, private, parameter  :: maxfac = 30 
   real(idp), parameter  :: pi =  atan(1.0_idp) * 4.0_idp 
-  real(idp), dimension(0:maxfac) :: dfct, ddfct
+  real(idp), dimension(0:maxfac) :: dfct
+  real(idp), dimension(-1:maxfac) :: ddfct
 
 contains
 
@@ -34,6 +35,7 @@ contains
         !----------------------------------------------------------------------c
         !           calculate (2*m-1) double factorial                         c
         !----------------------------------------------------------------------c
+        ddfct(-1) = 1.d+00
         ddfct(0)=1.d+00
         ddfct(1)=1.d+00
         ddfct(2)=3.d+00
