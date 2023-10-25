@@ -1,7 +1,7 @@
 module kinetic_integral
     use precision, only: idp
-    use Gaussian_type
-    use Gaussian_overlap
+    use contracted_Gaussian_type
+    use Gaussian_overlap, only: primitive_Gaussian_Overlap_Integral
     implicit none
     
 contains

@@ -3,7 +3,7 @@ module electron_repulsion_integral
     use constants, only : pi
     use Gaussian_overlap, only : Hermite_Gaussian_coefficients
     use nuclear_attrraction_integral, only : Couloumb_Hermite_integral
-    use Gaussian_type, only : contrct_Gaussian
+    use contracted_Gaussian_type, only : contrct_Gaussian
     implicit none
     
 contains

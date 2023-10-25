@@ -1,7 +1,7 @@
 module nuclear_attrraction_integral
     use precision, only : idp
     use constants, only : pi
-    use Gaussian_type
+    use contracted_Gaussian_type
     use Gaussian_overlap, only : Hermite_Gaussian_coefficients
     use boys_function, only: boys
     implicit none

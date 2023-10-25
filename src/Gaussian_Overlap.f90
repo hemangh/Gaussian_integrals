@@ -1,7 +1,8 @@
 module Gaussian_overlap
     use precision, only : idp, i4
     use constants, only : pi
-    use Gaussian_type
+    use contracted_Gaussian_type, only: contrct_Gaussian
+
     implicit none
     
     
