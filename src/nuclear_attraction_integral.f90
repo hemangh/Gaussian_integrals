@@ -120,7 +120,7 @@ end function primitive_Gaussian_nuclear_attraction
   !!    b: contracted Gaussian 'b', contrct_Gaussian object
   !!    C: 3-d (real=8) array, center of nucleus
   !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
-  function contracted_Gaussian_overlap(a,b,C) result(integral)
+  function contracted_Gaussian_nuclear_attraction(a,b,C) result(integral)
     
     type(contrct_Gaussian) :: a, b
     real(idp) :: C(3)
