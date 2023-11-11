@@ -45,7 +45,7 @@ contains
     else
     ! decrement index l2
         E = &
-             (1/(2*p))*Hermite_Gaussian_coefficients(l1,l2-1,num_nodes-1,distance,exp1,exp2)   + &
+             (1.d0/(2.d0*p))*Hermite_Gaussian_coefficients(l1,l2-1,num_nodes-1,distance,exp1,exp2)   + &
             (q*distance/exp2)*Hermite_Gaussian_coefficients(l1,l2-1,num_nodes,distance,exp1,exp2)+ &
             (num_nodes+1)*Hermite_Gaussian_coefficients(l1,l2-1,num_nodes+1,distance,exp1,exp2)
     endif
@@ -72,7 +72,7 @@ contains
         
         do i = 1, 3
 
-            S(i) = Hermite_Gaussian_coefficients (lmn1(i), lmn2(i),0, abs(coord_A(i)-coord_B(i)), a, b)
+            S(i) = Hermite_Gaussian_coefficients (lmn1(i), lmn2(i),0, coord_A(i)-coord_B(i), a, b)
 
         end do    
         
@@ -89,17 +89,55 @@ contains
     function contracted_Gaussian_overlap(a,b) result(overlap)
     
         type(contrct_Gaussian) :: a, b
-        real(idp) :: overlap
+        real(idp) :: overlap, sab
 
         integer :: ia, ib
         overlap = 0.d0
         do ia = 1, a%num
             do ib = 1, b%num
+                sab = primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
                 overlap = overlap + a%norm(ia) * b%norm(ib) * a%coefs(ia) * b%coefs(ib) &
-                * primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
+                * sab
+                !* primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
+                ! *OV(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
             end do
         end do
 
     end function
+
+    function OV(alpha, LA, RA, beta, LB, RB) result(Overlap)
+        real(kind=8), intent(in) :: alpha, beta
+        real(kind=8), dimension(3), intent(in) :: RA, RB
+        integer, dimension(3), intent(in) :: LA, LB
+        real(kind=8) :: Overlap, EAB
+        real(kind=8), dimension(:,:,:) , allocatable :: s
+        integer :: i, a, b, max_LA, max_LB
+        
+        ! Initialize s(i, a, 0)
+        max_LA = max(LA(1),LA(2),LA(3))
+        max_LB = max(LB(1),LB(2),LB(3))
+        allocate(s(1:3, 0:max_LA+2, 0:max_LB+2))
+        do i = 1, 3
+          s(i, 0, 0) = 1.0d0
+          s(i, 1, 0) = -(RA(i) - (alpha*RA(i) + beta*RB(i)) / (alpha + beta))
+          do a = 2, LA(i)
+            s(i, a, 0) = -(RA(i) - (alpha*RA(i) + beta*RB(i)) / (alpha + beta)) * s(i, a - 1, 0) &
+                         + ((a - 1) / (2.0d0 * (alpha + beta))) * s(i, a - 2, 0)
+          end do
+        end do
+        
+        ! Transfer equation
+        do i = 1, 3
+          do b = 0, LB(i)
+            do a = 0, LA(i)
+              s(i, a, b) = s(i, a + 1, b - 1) + (RA(i) - RB(i)) * s(i, a, b - 1)
+            end do
+          end do
+        end do
+        
+        ! Compute EAB and overlap
+        EAB = exp(-alpha * beta / (alpha + beta) * sum((RA - RB) ** 2))
+        Overlap = EAB * (pi / (alpha + beta)) ** 1.5d0 * s(1, LA(1), LB(1)) * s(2, LA(2), LB(2)) * s(3, LA(3), LB(3))
+      end function OV
 
 end module Gaussian_overlap
