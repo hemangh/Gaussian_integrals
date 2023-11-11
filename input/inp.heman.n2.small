@@ -1,0 +1,33 @@
+$route
+2s+1=1 hf
+print=(int=(s,t,v)) geom=(coord,inau,nocrowd)
+$end
+ 
+$nonstd
+1//1,2;
+2//2;
+3//2;
+20//1;
+$end
+ 
+$title
+N2 molecule
+$end
+ 
+$geom
+n1(basis=scf) 0.0 0.0  1.034
+n2(basis=scf) 0.0 0.0 -1.034
+$end
+
+$scf n
+type=s
+  19.9981      1.0
+   2.6860      1.0
+type=p
+  1.7074       1.0
+  0.5314       1.0
+type=d
+  0.800000     1.0
+type=f
+  0.80         1.0
+$end

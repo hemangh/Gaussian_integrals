@@ -13,6 +13,7 @@ module contracted_Gaussian_type
   contains
     procedure :: initialize
     procedure :: normalize
+    procedure :: destroy
   end type
 contains
   subroutine initialize(self, origin, power, exps, coefs)
@@ -80,6 +81,11 @@ contains
       self%coefs(ia) = self%coefs(ia) * norm
     end do
 
-  end subroutine
+  end subroutine normalize
 
+  subroutine destroy(self)
+    class (contrct_Gaussian) :: self
+    deallocate(self%exps, self%coefs, self%norm)
+    self%num = 0
+  end subroutine destroy
 end module contracted_Gaussian_type

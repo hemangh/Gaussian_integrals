@@ -1,0 +1,36 @@
+$route
+2s+1=1 hf
+print=(int=(s,t,v)) geom=(coord,inau,nocrowd)
+$end
+ 
+$nonstd
+1//1,2;
+2//2;
+3//2;
+20//1;
+$end
+ 
+$title
+H atom
+$end
+ 
+$geom
+h1(basis=small) 0.0 0.0 .7
+h2(basis=small) 0.0 0.0 -.7
+$end
+
+$small h
+/ old H2
+  type=s
+ 1000.00    1.00
+  type=s
+   .100     1.00
+  type=p
+   10.00    1.00
+  type=p
+    .10     1.00
+  type=d
+   5.00     1.00
+  type=d
+    .10     1.00
+$end
