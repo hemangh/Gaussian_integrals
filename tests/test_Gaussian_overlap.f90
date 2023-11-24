@@ -7,7 +7,7 @@ program test
     real(8) :: alpha1, alpha2, s(5)
     integer, dimension(3) :: pow1, pow2
     real(8), dimension(3) :: coord_1, coord_2
-    real(8), allocatable  :: exps(:), coeff(:)
+    real(8), allocatable  :: exps(:), coeff(:), HGcoeff(:,:,:)
     type(contrct_Gaussian) :: a, b
     type(contrct_Gaussian) :: g(7)
     type(contrct_Gaussian) :: f1(37), f2(37)
@@ -110,10 +110,10 @@ program test
     print*, "contracted basis norm:", norm_contr 
     ! orb. 2
     print*, "orbital 2: O 2s"
-    exps = [5.0331513, 1.1695961, 0.3803890] 
-    coeff= [-0.09996723, 0.39951283, 0.70011547]
+    exps = [5.0331513_idp, 1.1695961_idp, 0.3803890_idp] 
+    coeff= [-0.09996723_idp, 0.39951283_idp, 0.70011547_idp]
     pow1 = [0, 0, 0]
-    coord_1 = [0.000000000000 , -0.143225816552 ,  0.000000000000]
+    coord_1 = [0.000000000000_idp , -0.143225816552_idp ,  0.000000000000_idp]
      
     call g(2)%initialize(coord_1, pow1, exps, coeff)  
 
@@ -463,4 +463,7 @@ program test
         write(7,'(I0,x,5(E15.8))') i,s(:j-1)
     end do
     close(7)
+    allocate(HGcoeff(0:1, 0:1, 0:1))
+    call Hermite_Gaussian_coefficients_subroutine(1,1.d0,1.d0, 1.d0, HGcoeff)
+    print*, HGcoeff
 end program test

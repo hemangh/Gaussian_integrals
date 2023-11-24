@@ -53,6 +53,68 @@ contains
     end function Hermite_Gaussian_coefficients
 
 
+    !!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+    ! Recursive definition of Hermite Gaussian expansion coefficients.
+    ! Returns a real double matrix set for all the Hermite Gaussian coefficients.
+    ! lmax : maximum l-number to iterate to
+    ! distance: distance between origins of Gaussian '1' and '2'
+    ! exp1: orbital exponent on Gaussian '1' (e.g. alpha in the text)
+    ! exp2: orbital exponent on Gaussian '2' (e.g. beta in the text)
+    !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+    subroutine Hermite_Gaussian_coefficients_subroutine(lmax, distance, exp1, exp2, result_matrix)
+
+        integer(i4), intent(in) :: lmax
+        real(idp), intent(in) :: distance, exp1, exp2
+        real(idp), intent(out) :: result_matrix(0:lmax, 0:lmax, 0:lmax)
+
+        integer(i4) :: l1,l2, lsum
+        integer(i4) :: num_nodes
+    
+        real(idp), allocatable :: temp_matrix(:,:,:)
+        allocate(temp_matrix(-1:lmax, -1:lmax, -1:lmax))
+        temp_matrix = 0.d0
+    
+        do lsum = 0, lmax
+            do l1 = 0, min(lmax, lsum)
+                l2 = lsum - l1
+                if (l2 <= lmax .and. l2 >= 0) then
+                    do num_nodes = 0, min(l1 + l2, lmax)
+                        if (num_nodes >= 0) then
+                            if (l1 == l2 .and. l2 == num_nodes .and. num_nodes == 0) then
+                                ! base case
+                                temp_matrix(l1, l2, num_nodes) = exp(-exp1 * exp2 / (exp1 + exp2) * distance * distance) ! K_AB
+                            elseif (l2 == 0 .and. l1 - 1 >= 0 .and. num_nodes - 1 >= 0) then
+                                ! decrement index l1
+                                temp_matrix(l1, l2, num_nodes) = (1.d0 / (2.d0 * (exp1 + exp2))) * &
+                                    temp_matrix(l1-1, l2, num_nodes-1) - &
+                                    (exp1 * distance / (exp1 + exp2)) * temp_matrix(l1-1, l2, num_nodes) + &
+                                    (num_nodes + 1) * temp_matrix(l1-1, l2, num_nodes+1)
+                            elseif (l2 > 0 .and. l1 >= 0 .and. num_nodes - 1 < 0) then
+                                ! decrement index l2, disregarding num_nodes-1 term
+                                temp_matrix(l1, l2, num_nodes) = (1.d0 / (2.d0 * (exp1 + exp2))) * &
+                                    temp_matrix(l1, l2-1, num_nodes-1) + &
+                                    (num_nodes + 1) * temp_matrix(l1, l2-1, num_nodes+1)
+                            else
+                                ! decrement index l2
+                                temp_matrix(l1, l2, num_nodes) = (1.d0 / (2.d0 * (exp1 + exp2))) * &
+                                    temp_matrix(l1, l2-1, num_nodes-1) + &
+                                    (exp2 * distance / (exp1 + exp2)) * temp_matrix(l1, l2-1, num_nodes) + &
+                                    (num_nodes + 1) * temp_matrix(l1, l2-1, num_nodes+1)
+                            endif
+                        endif
+                    end do
+                endif
+            end do
+        end do
+    
+        ! Copy valid portion to the output matrix
+        result_matrix = temp_matrix(0:lmax, 0:lmax, 0:lmax)
+    
+        deallocate(temp_matrix)
+    
+    end subroutine Hermite_Gaussian_coefficients_subroutine
+    
+
     !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
     !! Evaluation of overlap of two primitive Gaussians on output
     !! Input : a, b (real=8) :: exponents of the two Gaussians
@@ -98,46 +160,11 @@ contains
                 sab = primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
                 overlap = overlap + a%norm(ia) * b%norm(ib) * a%coefs(ia) * b%coefs(ib) &
                 * sab
-                !* primitive_Gaussian_Overlap_Integral(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
-                ! *OV(a%exps(ia), a%power,a%origin, b%exps(ib), b%power,b%origin)
             end do
         end do
 
     end function
 
-    function OV(alpha, LA, RA, beta, LB, RB) result(Overlap)
-        real(kind=8), intent(in) :: alpha, beta
-        real(kind=8), dimension(3), intent(in) :: RA, RB
-        integer, dimension(3), intent(in) :: LA, LB
-        real(kind=8) :: Overlap, EAB
-        real(kind=8), dimension(:,:,:) , allocatable :: s
-        integer :: i, a, b, max_LA, max_LB
-        
-        ! Initialize s(i, a, 0)
-        max_LA = max(LA(1),LA(2),LA(3))
-        max_LB = max(LB(1),LB(2),LB(3))
-        allocate(s(1:3, 0:max_LA+2, 0:max_LB+2))
-        do i = 1, 3
-          s(i, 0, 0) = 1.0d0
-          s(i, 1, 0) = -(RA(i) - (alpha*RA(i) + beta*RB(i)) / (alpha + beta))
-          do a = 2, LA(i)
-            s(i, a, 0) = -(RA(i) - (alpha*RA(i) + beta*RB(i)) / (alpha + beta)) * s(i, a - 1, 0) &
-                         + ((a - 1) / (2.0d0 * (alpha + beta))) * s(i, a - 2, 0)
-          end do
-        end do
-        
-        ! Transfer equation
-        do i = 1, 3
-          do b = 0, LB(i)
-            do a = 0, LA(i)
-              s(i, a, b) = s(i, a + 1, b - 1) + (RA(i) - RB(i)) * s(i, a, b - 1)
-            end do
-          end do
-        end do
-        
-        ! Compute EAB and overlap
-        EAB = exp(-alpha * beta / (alpha + beta) * sum((RA - RB) ** 2))
-        Overlap = EAB * (pi / (alpha + beta)) ** 1.5d0 * s(1, LA(1), LB(1)) * s(2, LA(2), LB(2)) * s(3, LA(3), LB(3))
-      end function OV
+
 
 end module Gaussian_overlap
