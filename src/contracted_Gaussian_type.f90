@@ -54,8 +54,8 @@ contains
 
     l(:) = self%power(:)
     lmax = sum (l)
-    
-    dbl_fact_prod = ddfct(2*l(1) - 1) * ddfct(2*l(2) - 1) * ddfct(2*l(3) - 1)
+    ! Does the double factorial of (2l-1)
+    dbl_fact_prod = ddfct(l(1)) * ddfct(l(2)) * ddfct(l(3))
 
     self%norm(:) = 2.d0 ** (2*lmax + 1.5)  * & 
       self%exps(:) ** (lmax + 1.5) / dbl_fact_prod / sqrt(pi) ** 3
