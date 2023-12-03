@@ -3,7 +3,7 @@ module nuclear_attrraction_integral
     use constants, only : pi
     use contracted_Gaussian_type
     use Gaussian_overlap, only : Hermite_Gaussian_coefficients
-    use boys_function, only: boys
+    ! use boys_function, only: boys
     implicit none
     
 contains
@@ -25,13 +25,15 @@ recursive function Couloumb_Hermite_integral (t,u,v,n,p,PCx,PCy,PCz,RPC) result(
     integer, intent(in) :: t, u, v, n
     real(idp), intent(in) :: p, PCx, PCy, PCz, RPC
     real(idp) :: val
+
+    real(idp), external :: Boys_func
     
     real(idp) :: x
 
     x = p * RPC * RPC
     val = 0.0
     if (t == 0 .and. u == 0 .and. v == 0) then
-        val = (-2.0d0 * p) ** n * boys(n, x)
+        val = (-2.0d0 * p) ** n * Boys_func(n, x)
     elseif (t == 0 .and. u == 0) then
         if (v > 1) then
         val = (v - 1) * Couloumb_Hermite_integral(t, u, v - 2, n + 1, p, PCx, PCy, PCz, RPC)

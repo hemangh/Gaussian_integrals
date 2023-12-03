@@ -14,3 +14,4 @@ target_sources(Gaussian_integrals_lib
     )
 
 
+target_link_libraries(Gaussian_integrals_lib PRIVATE boys_func)
