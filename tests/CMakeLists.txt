@@ -10,9 +10,9 @@ add_executable(simpleN2_test test_primitivesN2.f90 reader_mod.f90)
 
 target_link_libraries(simpleN2_test Gaussian_integrals_lib)
 
-add_executable(boys_test test_boys.f90)
+add_executable(boys_test2 test_boys.f90)
 
-target_link_libraries(boys_test Gaussian_integrals_lib)
+target_link_libraries(boys_test2 Gaussian_integrals_lib)
 
 add_test(
   NAME
@@ -36,5 +36,5 @@ add_test(
     NAME
       test_boys
     COMMAND
-      $<TARGET_FILE:boys_test>
+      $<TARGET_FILE:boys_test2>
 )
