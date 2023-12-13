@@ -4,7 +4,7 @@ module constants
 
   integer, private, parameter  :: maxfac = 30 
   real(idp), parameter  :: pi =  atan(1.0_idp) * 4.0_idp 
-  real(idp), dimension(0:maxfac) :: dfct
+  real(idp), dimension(0:maxfac) :: dfct, dfct2
   real(idp), dimension(-1:maxfac) :: ddfct
 
 contains
@@ -22,14 +22,17 @@ contains
     else
       write(*,*) "first time factorials is called"
       !----------------------------------------------------------------------c
-      !               calculate factorials                                   c
+      !               calculate factorials & double factorials               c
       !----------------------------------------------------------------------c
 
       dfct(0)=1.d+00
       dfct(1)=1.d+00
+      dfct2(0) = 1.d+00
+      dfct2(1) = 1.d+00
       if (maxfac.gt.1) then
         do 10 i=2,maxfac
           dfct(i)=i*dfct(i-1)
+          dfct2(i) = i*dfct2(i-2)
           10     continue
         endif
         !----------------------------------------------------------------------c

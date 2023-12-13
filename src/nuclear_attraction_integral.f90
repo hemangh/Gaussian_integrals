@@ -1,12 +1,42 @@
 module nuclear_attrraction_integral
     use precision, only : idp
-    use constants, only : pi
+    use constants, only : pi, dfct, dfct2, factorials
     use contracted_Gaussian_type
     use Gaussian_overlap, only : Hermite_Gaussian_coefficients
-    ! use boys_function, only: boys
+    use boys_function, only: boys
     implicit none
     
 contains
+
+function Couloumb_Hermite_integral_t0 (u,v,n,p,PCx,PCy,PCz,RPC) result(val)
+    integer, intent(in) ::  u, v, n
+    real(idp), intent(in) :: p, PCx, PCy, PCz, RPC
+    real(idp) :: val
+
+    real(idp), external :: Boys_func
+    
+    real(idp) :: x, prefac, b
+    integer   :: i, j, k, order
+
+    call factorials
+    x = p * RPC * RPC
+    val = 0.d0
+    do i = 0, u/2
+        do j = 0, v/2
+            do k = 0, n/2
+                prefac = dfct(u) * dfct(v) * dfct(n) &
+                /dfct2(2*i)/dfct2(2*j)/dfct2(2*k)/ &
+                dfct(u-2*i)/dfct(v-2*j)/dfct(n-2*k)
+                order = u+v+n-i-j-k
+                b = boys(order,x)
+                val = val +  PCx ** (u-2*i)*PCy**(v-2*j)*PCz**(n-2*k) * &
+                prefac * b *(-2.d0*p) ** order
+            end do
+        end do
+    end do
+
+end function
+
 !!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
 ! Returns the Coulomb auxiliary Hermite integrals
 ! Returns a real(kind=8) val.
@@ -104,7 +134,8 @@ function primitive_Gaussian_nuclear_attraction(exp_a, pow_a, origin_a, exp_b, po
           E1 = Hermite_Gaussian_coefficients(l1, l2, t, origin_a(1) - origin_b(1), exp_a, exp_b)
           E2 = Hermite_Gaussian_coefficients(m1, m2, u, origin_a(2) - origin_b(2), exp_a, exp_b)
           E3 = Hermite_Gaussian_coefficients(n1, n2, v, origin_a(3) - origin_b(3), exp_a, exp_b)
-          RVal = Couloumb_Hermite_integral(t, u, v, 0, gamma, P(1) - C(1), P(2) - C(2), P(3) - C(3), RPC)
+        !  RVal = Couloumb_Hermite_integral(t, u, v, 0, gamma, P(1) - C(1), P(2) - C(2), P(3) - C(3), RPC)
+          RVal = Couloumb_Hermite_integral_t0( t, u, v, gamma, P(1) - C(1), P(2) - C(2), P(3) - C(3), RPC)
           val = val + E1 * E2 * E3 * RVal
         end do
       end do
