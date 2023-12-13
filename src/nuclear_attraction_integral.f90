@@ -7,9 +7,22 @@ module nuclear_attrraction_integral
     implicit none
     
 contains
-
-function Couloumb_Hermite_integral_t0 (u,v,n,p,PCx,PCy,PCz,RPC) result(val)
-    integer, intent(in) ::  u, v, n
+!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+! Returns the Coulomb Hermite integrals (R^0_{tuv})
+! Returns a real(kind=8) val.
+! Arguments:
+! t,u,v:
+! order of Coulomb Hermite derivative in x,y,z
+! (see defs in Helgaker and Taylor)
+! p:
+! sum of exponents of two Gaussians
+! PCx,y,z: Cartesian vector distance between Gaussian
+! composite center P and nuclear center C
+! RPC:
+! Distance between P and C
+!!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++!!
+function Couloumb_Hermite_integral_t0 (t,u,v,p,PCx,PCy,PCz,RPC) result(val)
+    integer, intent(in) ::  t, u, v
     real(idp), intent(in) :: p, PCx, PCy, PCz, RPC
     real(idp) :: val
 
@@ -21,15 +34,15 @@ function Couloumb_Hermite_integral_t0 (u,v,n,p,PCx,PCy,PCz,RPC) result(val)
     call factorials
     x = p * RPC * RPC
     val = 0.d0
-    do i = 0, u/2
-        do j = 0, v/2
-            do k = 0, n/2
-                prefac = dfct(u) * dfct(v) * dfct(n) &
+    do i = 0, t/2
+        do j = 0, u/2
+            do k = 0, v/2
+                prefac = dfct(t) * dfct(u) * dfct(v) &
                 /dfct2(2*i)/dfct2(2*j)/dfct2(2*k)/ &
-                dfct(u-2*i)/dfct(v-2*j)/dfct(n-2*k)
-                order = u+v+n-i-j-k
+                dfct(t-2*i)/dfct(u-2*j)/dfct(v-2*k)
+                order = t+u+v-i-j-k
                 b = boys(order,x)
-                val = val +  PCx ** (u-2*i)*PCy**(v-2*j)*PCz**(n-2*k) * &
+                val = val +  PCx ** (t-2*i)*PCy**(u-2*j)*PCz**(v-2*k) * &
                 prefac * b *(-2.d0*p) ** order
             end do
         end do
@@ -44,6 +57,8 @@ end function
 ! t,u,v:
 ! order of Coulomb Hermite derivative in x,y,z
 ! (see defs in Helgaker and Taylor)
+! p:
+! sum of exponents of two Gaussians
 ! n:
 ! order of Boys function
 ! PCx,y,z: Cartesian vector distance between Gaussian
