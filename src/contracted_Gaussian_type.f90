@@ -1,6 +1,6 @@
 module contracted_Gaussian_type
   use precision, only : idp
-  use constants, only : pi, factorials, ddfct
+  use constants, only : pi, factorials, factorial_2n_minus_1
   implicit none
 
   type contrct_Gaussian
@@ -55,7 +55,7 @@ contains
     l(:) = self%power(:)
     lmax = sum (l)
     ! Does the double factorial of (2l-1)
-    dbl_fact_prod = ddfct(l(1)) * ddfct(l(2)) * ddfct(l(3))
+    dbl_fact_prod = factorial_2n_minus_1(l(1)) * factorial_2n_minus_1(l(2)) * factorial_2n_minus_1(l(3))
 
     self%norm(:) = 2.d0 ** (2*lmax + 1.5)  * & 
       self%exps(:) ** (lmax + 1.5) / dbl_fact_prod / sqrt(pi) ** 3

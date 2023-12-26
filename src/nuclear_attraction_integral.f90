@@ -1,6 +1,6 @@
 module nuclear_attrraction_integral
     use precision, only : idp
-    use constants, only : pi, dfct, dfct2, factorials
+    use constants, only : pi, factorial, double_factorial, factorials
     use contracted_Gaussian_type
     use Gaussian_overlap, only : Hermite_Gaussian_coefficients
     use boys_function, only: boys
@@ -37,9 +37,9 @@ function Couloumb_Hermite_integral_t0 (t,u,v,p,PCx,PCy,PCz,RPC) result(val)
     do i = 0, t/2
         do j = 0, u/2
             do k = 0, v/2
-                prefac = dfct(t) * dfct(u) * dfct(v) &
-                /dfct2(2*i)/dfct2(2*j)/dfct2(2*k)/ &
-                dfct(t-2*i)/dfct(u-2*j)/dfct(v-2*k)
+                prefac = factorial(t) * factorial(u) * factorial(v) &
+                /double_factorial(2*i)/double_factorial(2*j)/double_factorial(2*k)/ &
+                factorial(t-2*i)/factorial(u-2*j)/factorial(v-2*k)
                 order = t+u+v-i-j-k
                 b = boys(order,x)
                 val = val +  PCx ** (t-2*i)*PCy**(u-2*j)*PCz**(v-2*k) * &
