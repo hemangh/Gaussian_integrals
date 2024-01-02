@@ -13,6 +13,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
 # add and build the boys function library
 add_subdirectory(libboys)
 # defines targets and sources
+add_subdirectory(utility_library)
+
+add_subdirectory(math_library)
+
 add_subdirectory(src)
 
 # contains an "external" library we will link to

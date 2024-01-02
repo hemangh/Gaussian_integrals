@@ -1,6 +1,7 @@
 module contracted_Gaussian_type
   use precision, only : idp
-  use constants, only : pi, factorials, factorial_2n_minus_1
+  use constants, only : pi
+  use factorials_mod, only: compute_factorials, factorial, factorial_2n_minus_1
   implicit none
 
   type contrct_Gaussian
@@ -50,7 +51,7 @@ contains
     integer   :: ia, ib
     integer   :: num_exp
 
-    call factorials()
+    call compute_factorials()
 
     l(:) = self%power(:)
     lmax = sum (l)

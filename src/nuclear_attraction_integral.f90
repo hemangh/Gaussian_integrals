@@ -1,6 +1,7 @@
 module nuclear_attrraction_integral
     use precision, only : idp
-    use constants, only : pi, factorial, double_factorial, factorials
+    use constants, only : pi
+    use factorials_mod, only: factorial, double_factorial, compute_factorials
     use contracted_Gaussian_type
     use Gaussian_overlap, only : Hermite_Gaussian_coefficients
     use boys_function, only: boys
@@ -31,7 +32,7 @@ function Couloumb_Hermite_integral_t0 (t,u,v,p,PCx,PCy,PCz,RPC) result(val)
     real(idp) :: x, prefac, b
     integer   :: i, j, k, order
 
-    call factorials
+    call compute_factorials
     x = p * RPC * RPC
     val = 0.d0
     do i = 0, t/2
