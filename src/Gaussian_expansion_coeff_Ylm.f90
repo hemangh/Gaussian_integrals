@@ -1,6 +1,7 @@
 module Gaussian_expansion_coefficient_Ylm
 use precision
 use factorials_mod, only: binomial_coeff
+use conversions, only: cart2sph
     implicit none
 
     contains
@@ -20,7 +21,7 @@ use factorials_mod, only: binomial_coeff
         real(idp), allocatable :: coeff(:,:)
         real(idp), allocatable :: coeff_vector(:)
 
-        real(idp):: rtheaphi(3)
+        real(idp):: rthetaphi(3)
         real(idp) :: r, theta, phi
 
         allocate(coeff(0:max(l,m,n),3))
@@ -29,11 +30,13 @@ use factorials_mod, only: binomial_coeff
         allocate(coeff_vector(0:sum([l,m,n])))
         coeff = 0._idp
         ! convert x, y, z to r, thea, phi (e.g., spherical coordinate)
-        !rthetaphi = cartesian_to_spherical(x,y,z)
-
-        ! a = sin(theta) * cos(phi)
-        ! b = sin(theta) * sin(phi)
-        ! c = cos(theta)
+        rthetaphi = cart2sph([x,y,z])
+        r = rthetaphi(1)
+        theta = rthetaphi(2)
+        phi = rthetaphi(3)
+        a = sin(theta) * cos(phi)
+        b = sin(theta) * sin(phi)
+        c = cos(theta)
 
         !(x-Rx)^l => \sum_{k=0}^l binomial_coeff(l,k) * (a*r)^{l-k} * Rx^k 
         do k = 0, l
@@ -64,5 +67,6 @@ use factorials_mod, only: binomial_coeff
         sum_ijk = sum(coeff_vector)
 
     end function
+
 
 end module
