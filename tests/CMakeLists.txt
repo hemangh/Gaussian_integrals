@@ -41,3 +41,14 @@ add_test(
     COMMAND
       $<TARGET_FILE:boys_test2>
 )
+
+add_executable(cg_test test_clebsh_gordan_coef.f90)
+
+target_link_libraries(cg_test PRIVATE Gaussian_integrals_lib)
+
+add_test(
+  NAME
+    test_clebsh_gordan_coef
+  COMMAND
+    $<TARGET_FILE:cg_test>
+  )

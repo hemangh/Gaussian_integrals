@@ -8,6 +8,8 @@ target_sources(math_lib
     factorials.f90
     lmindx_map.f90
     sphericalHarmonics.f90
+    # clebsch_gordan.f
+    clebsh_gordan.f90
 )
 
 target_link_libraries(math_lib PUBLIC utility_lib)
