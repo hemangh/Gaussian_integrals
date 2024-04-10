@@ -42,73 +42,50 @@ use sphericalHarmonics, only: real_spherical_harmonics
 
     contains
     !***********************************************************************************************
-    ! (x-Rx)^l * (y-Ry)^m * (z-Rz)^n = \sum_{ijk} A^{lmn}_{ijk} r^{i+j+k}
+    ! (x-Rx)^l * (y-Ry)^m * (z-Rz)^n = \sum_{ijk} A^{lmn}_{ijk} x^{i}*y^{j}*z^{k}
     !
-    ! Input: Cartesian coordinate: x , y, z (double)
-    !        Cartesian coordinate of primitive Gaussian center: Rx, Ry, Rz (double)
-    !        power of x,y,z terms of the Gaussian primitive : l, m, n (integer)
-    ! Output: vector A^{lmn}_{ijk} r^{i+j+k} where 0<=i+j+k<= l+m+n (double(size=l+m+n+1))
+    ! Input: 
+    !        Cartesian coordinate of primitive Gaussian's center: Rxyz_coord => [Rx, Ry, Rz] (double)
+    !        power of x,y,z terms of the Gaussian primitive, in the non-local (off-center) coordinate
+    !                               :  pwr(x,y,z) => [l, m, n] (integer)
+    ! Output: matrix coefficients (A^{lmn}_{ijk}) where i, j, k are powers of x, y, z in the local coordinate
+    !                               : coeff(0:max(l,m,n),3)  (double)
     !************************************************************************************************
-    function cartesian_to_spherical_prefactor_coeff (x, Rx, l, y,Ry,m, z, Rz, n) result(coeff_vector)
-        real(idp):: x, y, z
+    subroutine localcartesian_coeff ( Rxyz_coord, pwr, coeff)
+
+       
+        real(idp), intent(in) :: Rxyz_coord(3) 
+        real(idp), intent(in) :: pwr(3)
+
+        real(idp), allocatable, intent(out) :: coeff(:,:) !result
+
         real(idp):: Rx,Ry, Rz
         integer  :: l, m, n
-
-        real(idp), allocatable :: coeff_vector(:)
         
-        
+        integer :: k
 
-        integer :: i, j, k, r_pow
-        real(idp) :: a, b, c
-        real(idp) :: term
-        real(idp), allocatable :: coeff(:,:)
-        
-
-        real(idp):: rthetaphi(3)
-        real(idp) :: r, theta, phi
-
+        l = pwr(1)
+        m = pwr(2)
+        n = pwr(3)
         allocate(coeff(0:max(l,m,n),3))
         coeff = 0._idp
 
-        allocate(coeff_vector(0:sum([l,m,n])))
-        coeff_vector = 0._idp
-        ! convert x, y, z to r, thea, phi (e.g., spherical coordinate)
-        rthetaphi = cart2sph([x,y,z])
-        r = rthetaphi(1)
-        theta = rthetaphi(2)
-        phi = rthetaphi(3)
-        a = sin(theta) * cos(phi)
-        b = sin(theta) * sin(phi)
-        c = cos(theta)
-
-        !(x-Rx)^l => \sum_{k=0}^l binomial_coeff(l,k) * (a*r)^{l-k} * Rx^k 
+        !(x-Rx)^l => \sum_{k=0}^l binomial_coeff(l,k) * (x)^{l-k} * Rx^k 
         do k = 0, l
-            coeff(k,1) = binomial_coeff(l,k) * Rx**k * a**(l-k)
+            coeff(l-k,1) = binomial_coeff(l,k) * Rxyz_coord(1)**k !* x**(l-k)
         end do
 
-        !(y-Ry)^m => \sum_{k=0}^m binomial_coeff(m,k) * (b*r)^{m-k} * Ry^k 
+        !(y-Ry)^m => \sum_{k=0}^m binomial_coeff(m,k) * (y)^{m-k} * Ry^k 
         do k = 0, m
-            coeff(k,2) = binomial_coeff(m,k) * Ry**k * b**(m-k)
+            coeff(m-k,2) = binomial_coeff(m,k) * Rxyz_coord(2)**k !* y**(m-k)
         end do
 
-        !(z-Rz)^n => \sum_{k=0}^n binomial_coeff(n,k) * (c*r)^{n-k} * Rz^k 
+        !(z-Rz)^n => \sum_{k=0}^n binomial_coeff(n,k) * (z)^{n-k} * Rz^k 
         do k = 0, n
-            coeff(k,3) = binomial_coeff(n,k) * Rz**k * c**(n-k)
+            coeff(n-k,3) = binomial_coeff(n,k) * Rxyz_coord(3)**k !* z**(n-k)
         end do
 
-        ! now multiply each term from x, y and z into every other term:
-        do i = 0, l
-            do j = 0, m
-                do k = 0, n
-                    r_pow = i+j+k
-                    term = coeff(i,1) * coeff(j,2) * coeff(k, 3) * r**r_pow
-                    coeff_vector(r_pow) = coeff_vector(r_pow) + term
-                end do
-            end do
-        end do
-
-
-    end function cartesian_to_spherical_prefactor_coeff
+    end subroutine localcartesian_coeff
     ! 
     ! \sum_{l,m} exp(-2*a*RA*r)* i_l(2*a*RA*r) * Y_{lm}(\hat{RA})
     ! 
