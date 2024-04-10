@@ -1,5 +1,5 @@
 module factorials_mod
-    use precision, only : idp
+    use precision, only : idp, qp
     implicit none
     integer, private, parameter  :: maxfac = 30 
     real(idp), dimension(0:maxfac) :: factorial, double_factorial
@@ -50,10 +50,20 @@ module factorials_mod
     end if
     end subroutine compute_factorials
 
-    function binomial_coeff(n, k) result(bico)
-        integer :: n, k
-        real(idp) :: bico
-        bico = exp(factorial(n)-factorial(k)-factorial(n-k))
+    function binomial_coeff(m, n) result(bico)
+      integer, intent(in) :: m
+      integer, intent(in) :: n
+      integer             :: i
+      real(idp)           :: dom
+      real(idp)           :: bico
+      bico = 1.0
+      if (m > 0 .and. n > 0) then
+          dom = 1.0
+          do i=n+1,m
+             dom = dom * i 
+          end do
+          bico = dom/factorial(m-n)
+      end if
     end function
     
     end module
