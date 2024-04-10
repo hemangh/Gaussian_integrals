@@ -1,25 +1,68 @@
 module Gaussian_expansion_coefficient_Ylm
-use precision
+use precision, only: idp
 use factorials_mod, only: binomial_coeff
 use conversions, only: cart2sph
+use special_functions, only: ikna
+use sphericalHarmonics, only: real_spherical_harmonics
     implicit none
+    integer, parameter :: max_l = 4
+    ! Coefficient of x^i y^j z^k = B^{LM}_{ijk} r^{i+j+k} Y_{LM}   
+    ! (L, M, i, j, k)                                    
+    real(idp) :: xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
+
+    ! xyz_YLM_coefficient(0, 0, 0, 0, 0) = 0.28209479177387814d0 ! Y_00
+
+    ! xyz_YLM_coefficient(1, -1, 0, 1, 0) = 0.4886025119029199d0  ! Y_1m1
+    ! xyz_YLM_coefficient(1, 0, 0, 0, 0)  = 0.4886025119029199d0  ! Y_10
+    ! xyz_YLM_coefficient(1, 1, 1, 0, 0)  = 0.4886025119029199d0  ! Y_11
+
+    ! xyz_YLM_coefficient(2, -2, 1, 1, 0) = 0.31539156525252005d0 ! Y_2m2
+    ! xyz_YLM_coefficient(2, -1, 0, 1, 0) = 0.5462742152960396d0  ! Y_2m1
+    ! xyz_YLM_coefficient(2, 0, 1, 1, 0)  = 0.5462742152960396d0   ! Y_20
+    ! xyz_YLM_coefficient(2, 1, 1, 1, 0)  = 0.5462742152960396d0   ! Y_21
+    ! xyz_YLM_coefficient(2, 2, 1, 1, 0)  = 0.5462742152960396d0   ! Y_22
+  
+    ! xyz_YLM_coefficient(3, -3, 0, 3, 0) = 0.13895681407382172d0 ! Y_3m3
+    ! xyz_YLM_coefficient(3, -2, 1, 1, 0) = 0.5900435899266439d0  ! Y_3m2
+    ! xyz_YLM_coefficient(3, -1, 0, 1, 0) = 0.28449475869314084d0 ! Y_3m1
+    ! xyz_YLM_coefficient(3, 0, 1, 1, 0) = 0.5900435899266439d0   ! Y_30
+    ! xyz_YLM_coefficient(3, 1, 1, 1, 0) = 0.28449475869314084d0  ! Y_31
+    ! xyz_YLM_coefficient(3, 2, 1, 1, 0) = 0.5900435899266439d0   ! Y_32
+    ! xyz_YLM_coefficient(3, 3, 0, 3, 0) = 0.13895681407382172d0 ! Y_33
+  
+    ! xyz_YLM_coefficient(4, -4, 3, 1, 0) = 0.4886025119029199d0  ! Y_4m4
+    ! xyz_YLM_coefficient(4, -3, 0, 3, 0) = 0.46557123656573955d0 ! Y_4m3
+    ! xyz_YLM_coefficient(4, -2, 1, 1, 0) = 0.12593510574971699d0 ! Y_4m2
+    ! xyz_YLM_coefficient(4, -1, 0, 1, 0) = 0.12593510574971699d0 ! Y_4m1
+    ! xyz_YLM_coefficient(4, 0, 4, 0, 0) = 0.119514472455632d0   ! Y_40
+    ! xyz_YLM_coefficient(4, 1, 0, 3, 0) = 0.12593510574971699d0 ! Y_41
+    ! xyz_YLM_coefficient(4, 2, 2, 2, 0) = 0.059857729514531774d0 ! Y_42
+    ! xyz_YLM_coefficient(4, 3, 0, 3, 0) = 0.12593510574971699d0 ! Y_43
+    ! xyz_YLM_coefficient(4, 4, 4, 0, 0) = 0.02370600766752924d0 ! Y_44
 
     contains
-    !
+    !***********************************************************************************************
     ! (x-Rx)^l * (y-Ry)^m * (z-Rz)^n = \sum_{ijk} A^{lmn}_{ijk} r^{i+j+k}
     !
-    function cartesian_to_spherical_prefactor_coeff (x, Rx, l, y,Ry,m, z, Rz, n) result(sum_ijk)
+    ! Input: Cartesian coordinate: x , y, z (double)
+    !        Cartesian coordinate of primitive Gaussian center: Rx, Ry, Rz (double)
+    !        power of x,y,z terms of the Gaussian primitive : l, m, n (integer)
+    ! Output: vector A^{lmn}_{ijk} r^{i+j+k} where 0<=i+j+k<= l+m+n (double(size=l+m+n+1))
+    !************************************************************************************************
+    function cartesian_to_spherical_prefactor_coeff (x, Rx, l, y,Ry,m, z, Rz, n) result(coeff_vector)
         real(idp):: x, y, z
         real(idp):: Rx,Ry, Rz
         integer  :: l, m, n
-        real(idp) :: sum_ijk
+
+        real(idp), allocatable :: coeff_vector(:)
+        
         
 
         integer :: i, j, k, r_pow
         real(idp) :: a, b, c
         real(idp) :: term
         real(idp), allocatable :: coeff(:,:)
-        real(idp), allocatable :: coeff_vector(:)
+        
 
         real(idp):: rthetaphi(3)
         real(idp) :: r, theta, phi
@@ -28,7 +71,7 @@ use conversions, only: cart2sph
         coeff = 0._idp
 
         allocate(coeff_vector(0:sum([l,m,n])))
-        coeff = 0._idp
+        coeff_vector = 0._idp
         ! convert x, y, z to r, thea, phi (e.g., spherical coordinate)
         rthetaphi = cart2sph([x,y,z])
         r = rthetaphi(1)
@@ -64,9 +107,45 @@ use conversions, only: cart2sph
             end do
         end do
 
-        sum_ijk = sum(coeff_vector)
 
-    end function
+    end function cartesian_to_spherical_prefactor_coeff
+    ! 
+    ! \sum_{l,m} exp(-2*a*RA*r)* i_l(2*a*RA*r) * Y_{lm}(\hat{RA})
+    ! 
+    function sum_over_Bessel_i_Ylm(a, RA, ThetaA,PhiA, r, lmax) result(sum2)
+        real(idp) :: a, RA, ThetaA,PhiA, r
+        integer   :: lmax
+        real(idp) :: sum2
 
+        integer :: nm
+        real(idp) , dimension(0:lmax) :: bi, di, bk, dk
+        real(idp), allocatable :: Ylm(:,:,:), theta(:), phi(:)
+        real(idp) :: x
+        integer :: l, m
+
+        sum2 = 0._idp
+        x = 2._idp * a * RA * r
+        allocate(theta(1), phi(1))
+        theta(1) = ThetaA
+        phi(1)   = PhiA
+        call ikna(lmax, x, nm, bi, di, bk, dk)
+        call real_spherical_harmonics(Ylm,theta,phi,1,lmax) !allocated according to phi/theta dim & lmax in the routine
+        do l = 0, lmax
+            do m = -l, l
+                sum2 = sum2 + exp(-x) * bi(l) * Ylm(1,l,m) ! * B^{lm}_{ijk} * Ylm(r) * 
+            end do
+        end do
+
+        end function sum_over_Bessel_i_Ylm
+
+        !
+        ! \sum_{l3, m3} \int Y_{l1,m1} Y_{l2, m2} Y_{l3, m3}
+        !
+        ! function sum_over_Clebsh_Gordon_Constants(l1, l2, l3, m1, m2, m3) result(sum3)
+            
+            ! integer, intent(in) :: l, m1, l2, m2, l3, m3
+            ! real(idp) :: sum3
+            
+            ! end function sum_over_Clebsh_Gordon_Constants
 
 end module

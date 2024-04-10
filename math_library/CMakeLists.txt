@@ -10,6 +10,9 @@ target_sources(math_lib
     sphericalHarmonics.f90
     # clebsch_gordan.f
     clebsh_gordan.f90
+    matrix_operations.f90
 )
 
-target_link_libraries(math_lib PUBLIC utility_lib)
+target_link_libraries(math_lib PUBLIC utility_lib -llapack -lblas)
+enable_testing()
+add_subdirectory(tests)

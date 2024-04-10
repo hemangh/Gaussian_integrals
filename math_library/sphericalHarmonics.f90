@@ -214,123 +214,120 @@ contains
           Ctuvlm = sgn * binomial_coeff(l,t) * binomial_coeff(l-t,m2+t) * binomial_coeff(t,u) * binomial_coeff(m2,vm) / denom
       
           end function Ctuvlm
-         
-         
-         !***************************************************************************
-         !  For a given orbital degree, the Cartesian Gaussian powers 
-         !  and the coefficients of transformation to Spherical Gaussians
-         !  is produced
-         !  Input: integer : l, the total power of the Cartesian Gaussian
-         !                   as well as the degree of the Spherical Harmonics
-         !                   part of the Spherical Gaussian
-         !  Output: integer: pwr(1:3,1:(l+1)*(l+2)/2) powers of the 
-         !                   Cartesian Gaussian in the conventional 
-         !                   ordering described in the icart function.
-         !                   Notice that pwr is allocatable and is deallocated 
-         !                   at every call if it is already allocated 
-         !          doubles: coeff(-l:l,1:(l+1)*(l+2)/2 )
-         !                   the coefficient of transformation of a Cartesian
-         !                   to a Spherical Gaussian, Notice that coeff is
-         !                   allocatable and is deallocated 
-         !                   at every call if it is already allocated
-         !**********************************************************************
-          
-          subroutine spherical_harmonics_trans_shell (l, pwr, coeff)
-            !> angular number of the obital (l)
-            integer, intent(in) :: l
-            !> powers of the Cartesian Gaussian in the conventional 
-            !> ordering allocated with dimensions(1:3,1:(l+1)*(l+2)/2)
-            integer, allocatable, intent(out) :: pwr(:,:)
-            !> conversion coefficients between Cartesian and Spherical
-            !> Gaussians, dimension(-l:l,1:(l+1)*(l+2)/2)
-            real(idp) , allocatable, intent(out) :: coeff(:,:)
-            
-            !> This is the size of the Cartesian Gaussians per l => (l+1)*(l+2)/2
-            integer :: size_sc
-            integer :: n_t, n_v, vv, m, mm, sidx, t, u, v, i, j, k, c1 
-            real(idp) :: Nlm, Ctuvlm2, summ
-            real(idp) :: fac
-            
-            !initializations--------------------------------------------------     
-            call compute_factorials !****it is only called once to make the factorials
-            size_sc = (l+1)*(l+2)/2
-            !if(.not. allocated(Sc)) allocate(Sc(size_sc))
-            !if(.not. allocated(Ss)) allocate(Ss(-l,l))
-            if (allocated(pwr)) deallocate(pwr)
-              allocate(pwr(3, size_sc))  
-            
-            if (allocated(coeff)) deallocate(coeff)
-              allocate( coeff(-l:l,size_sc) )
-            
 
-            fac = sqrt((2*l+1)/pi)*.5d0
-
-
-            n_v = 1
-            vv = 0
-            Nlm = 1.0
-            do m=-l,l
-                mm = abs(m)
-      
-               ! compute Nlm
-               if (mm > 0) then 
-                   Nlm = compute_Nlm(l, m)
-               else 
-                   Nlm = 1.0
-               end if
-      
-               ! find n_t
-               n_t = (l-mm)/2
-      
-               ! find n_v
-               if (m >= 0) then 
-                   n_v = mm/2 
-               else 
-                   n_v = (mm-1)/2
-               end if
-      
-               ! spherical idx: for descending order
-               !sidx = ipure2(l2, m); 
-      
-               ! spherical idx: for Psi4 order
-               sidx = m 
-      
-               summ = 0.0
-               ! loop over tuv
-               do t=0,n_t
-                   do v=0,n_v
-                       vv = 2*v
-                       if (m < 0) then 
-                           vv = vv + 1
-                       end if
-                       do u=0,t
-                           Ctuvlm2 = Ctuvlm(l, m, t, u, v, vv)
-      
-                           j = 2*(u+v)
-                           if (m < 0) then
-                               j = j + 1
-                           end if
-                           i = (2*t) + mm - j 
-                           k = l - i - j
-                           
-    
-                           ! Function index
-                           c1 = icart(i,j,k)
-                           ! Keep the powers
-                           pwr(:,c1) = [i,j,k]
-                           ! Keep the conversion coefficients
-                           coeff(m,c1) = Ctuvlm2 * Nlm * fac
-                           !!Sc(c1) = Nlm * (x**i * y**j * z**k)
-                           !!summ = summ + (Ctuvlm2 * Sc(c1))
-                       end do ! u
-                   end do ! v
-               end do ! t
-               !!Ss(sidx) = summ
-            end do ! m
-       
-            !close(1,status='keep')
-      
-            end subroutine spherical_harmonics_trans_shell 
-
+    !=========== spherical trans for shell: ===============================================================!
+     subroutine YLM_2_XYZ(l,  pwr, coeff)
+      !
+      ! YLM_2_XYZ is a set of codes to analytically compute the expansion
+      ! of a set of real solid spherical harmonics in terms of cartesian
+      ! gaussians.  These coefficients are used to transform cartesian integrals
+      ! to spherical harmonic integrals.  The convention used for the order of the
+      ! harmonics are descending in m.  More critically, the order of the primitives
+      ! is needed for the transformation.  The powers are explicity computed as are the
+      ! cartesian symbols.
+      !
+      !  Input: integer : l, the total power of the Cartesian Gaussian
+      !                   as well as the degree of the Spherical Harmonics
+      !                   part of the Spherical Gaussian
+      !  Output: integer: pwr(1:3 -->[x,y,z],1:(l+1)*(l+2)/2) powers of the 
+      !                   Cartesian Gaussian in the conventional 
+      !                   ordering described in the icart function.
+      !                   Notice that pwr is allocatable and is deallocated 
+      !                   at every call if it is already allocated 
+      !          doubles: coeff(1:2l+1 --> [-m,m],1:(l+1)*(l+2)/2 )
+      !                   the coefficient of transformation of a Cartesian
+      !                   to a Spherical Gaussian, Notice that coeff is
+      !                   allocatable and is deallocated 
+      !                   at every call if it is already allocated
+        integer  , intent(in)                  :: l
+        integer, allocatable, intent(out)      :: pwr(:,:)   ! on output it is allocated as (2l+1, (l+2)*(l+1)/2)
+        real(idp), allocatable, intent(out)    :: coeff(:,:) ! on output it is allocated as (3 (x,y,z) , (l+2)*(l+1)/2)
+        
+        integer                                :: n_t
+        integer                                :: n_v
+        integer                                :: vv
+        integer                                :: m
+        integer                                :: mm
+        integer                                :: num
+        integer                                :: t
+        integer                                :: u
+        integer                                :: v
+        integer                                :: i
+        integer                                :: j
+        integer                                :: k
+        integer                                :: c1
+        integer                                :: count
+        real(idp)                              :: Nlm
+        real(idp)                              :: Ctuvlm2
+        real(idp)                              :: fac
+                      
+      !initializations--------------------------------------------------     
+        call compute_factorials !****it is only called once to make the factorials
+        if (allocated(coeff)) deallocate(coeff)
+        if (allocated(pwr)) deallocate(pwr)
+        fac = sqrt((2*l+1)/pi)*.5d0
+        
+        n_v = 1
+        vv = 0
+        num = (l+1) * (l+2 ) / 2
+        allocate(coeff(2*l+1,num))
+        allocate(pwr(3,num))
+        Nlm = 1.0
+        ! write(*,*) 'Entering YLM_2_XYZ for l = ',l
+        count = 1
+       DO m = -l, l
+        ! DO loop = 1, 2*l+1
+        !    m=sp%m_list(loop)
+           mm = abs(m)
+      !                      compute Nlm
+           if (mm > 0) then 
+               Nlm = compute_Nlm(l,m)
+           else 
+               Nlm = 1.0
+           end if
+      !     write(iout,*) l, Nlm
+      !                      find n_t
+           n_t = (l-mm)/2
+      !                      find n_v
+           if (m >= 0) then 
+               n_v = mm/2 
+           else 
+               n_v = (mm-1)/2
+           end if
+      ! spherical idx: for descending order
+      !sidx = ipure2(l2, m); 
+      ! spherical idx: for Psi4 order
+      ! loop over tuv
+           DO t=0,n_t
+              DO v=0,n_v
+                 vv = 2*v
+                 if (m < 0) then 
+                     vv = vv + 1
+                 end if
+                 DO u=0,t
+                    Ctuvlm2 = Ctuvlm(l, m, t, u, v, vv)
+                    j = 2*(u+v)
+                    if (m < 0) then
+                        j = j + 1
+                    end if
+                    i = (2*t) + mm - j 
+                    k = l - i - j
+                    c1 = icart(i,j,k)
+                    pwr(1,c1) = i
+                    pwr(2,c1) = j
+                    pwr(3,c1) = k
+                    coeff(count,c1) = Ctuvlm2 * Nlm * fac
+                    
+                 END DO
+              END DO
+           END DO
+           count = count + 1
+      !
+        END DO
+        ! call print_matrix_int(pwr)
+        ! call print_matrix(coeff)
+        
+     
+        end subroutine YLM_2_XYZ
 
     end module sphericalHarmonics
