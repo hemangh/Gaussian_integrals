@@ -98,6 +98,7 @@ contains
         real(idp),dimension(:,:,:), allocatable        :: ylm
         if(allocated(ylm)) deallocate(ylm)
         allocate(ylm(npt,0:lmax,-lmax:lmax))
+        ylm = 0.d0
         !****it is only called once to make the factorials
         call compute_factorials
         allocate(x(npt))
@@ -126,7 +127,7 @@ contains
               !write(iout,*)'m:',m
               do i=1,npt
                 ylm(i,l,0)=fact*plm(i,l)
-                !write(iout,*)'ylm:',fact,plm(i,l),l,m,ylm(i,l,m)
+                ! write(*,*)'ylm:',fact,plm(i,l),l,m,ylm(i,l,m)
               end do
             else
               !fact=condon_fac*sqrt((2*l+1)*factorial(l-m)/(2.d0*pi)/factorial(l+m))

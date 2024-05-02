@@ -1,15 +1,22 @@
 program test_sphHY
-    use sphericalHarmonics, only: YLM_2_XYZ
+    use sphericalHarmonics, only: YLM_2_XYZ, real_spherical_harmonics, associated_legendre
     use matrix_operations, only: invs
+    use constants, only : pi
     use precision, only:idp
     implicit none
     INTEGER, ALLOCATABLE, DIMENSION(:,:) :: pwr
     !! powers of the Cartesian Gaussian in the conventional
     !! ordering allocated with dimensions(1:3,1:(l+1)*(l+2)/2)
-    REAL(idp), ALLOCATABLE, DIMENSION(:,:) :: coeff, invCoef(:,:)
+    REAL(idp), ALLOCATABLE, DIMENSION(:,:) :: coeff
     !! conversion coefficients between Cartesian and Spherical
     !! Gaussians, dimension(-l:l,1:(l+1)*(l+2)/2)
+    REAL(idp), ALLOCATABLE, DIMENSION(:,:) :: invCoef(:,:)
+    !! conversion coefficients between Spherical and Cartesian
+    !! Gaussians, dimension(1:(l+1)*(l+2)/2, -l:l)
+    REAL (idp), allocatable, Dimension(:,:,:) :: Ylm
+    real(idp),dimension(:,:),allocatable           :: plm
     integer :: i
+
 
     call YLM_2_XYZ(0,pwr,coeff)
     print*, coeff
@@ -58,6 +65,17 @@ program test_sphHY
     ! call print_matrix_int(pwr)
     ! print*, "Coeff matrix l=4:"
     ! call print_matrix(coeff)
+
+    ! Test Case 2:
+
+    call real_spherical_harmonics(ylm,[(pi/4._idp)],[pi/4._idp] ,1,2)
+    allocate(plm(1,0:2))
+    call associated_legendre(plm,[cos(pi/4._idp)],1,2,0)
+    print*, plm(1,0), plm(1,1)*0.5d0*sqrt((2.d0*real(1)+1.d0)/pi), plm(1,2)
+    ! print*, ylm(1,0,0)
+
+    print*, ylm(1,1,0), ylm(1,1,1), Ylm(1,1,-1)
+    print*, YLM(1,1,2), YLM(1,1,-2)
 
     contains
 
