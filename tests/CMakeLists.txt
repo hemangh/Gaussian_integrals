@@ -31,4 +31,15 @@ add_test(
         $<TARGET_FILE:simpleN2_test>
   )
 
+  add_executable(Gauss_exp_test test_Gauss_expansion.f90)
+  
+  target_link_libraries(Gauss_exp_test Gaussian_integrals_lib)
+  
+add_test(
+    NAME
+      test_Gauss_expansion
+    COMMAND
+      $<TARGET_FILE:Gauss_exp_test>
+)
+
   
