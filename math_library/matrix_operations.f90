@@ -19,14 +19,14 @@ contains
         
         m = size(A,1) ! rows
         n = size(A,2) ! columns
-        print*, m,'x',n
+        ! print*, m,'x',n
         allocate(Ainv(m,n))
         ! Store A in Ainv to prevent it from being overwritten by LAPACK
         Ainv = A
 
 
         if (m /= n) then
-          print*, "none square matrix does not have an inverse. Returning psudo-inverse if possible."
+          !print*, "none square matrix does not have an inverse. Returning psudo-inverse if possible."
           !     Compute the singular values and left and right singular vectors
           !     of A = u * s * vt
           !lda = m
@@ -54,12 +54,12 @@ contains
           ut = transpose(u)
           v  = transpose(vt)
           s_dagger(:) = 1.d0 / s(:)
-          print*, "U:"
-          call print_matrix(u)
-          print*, "S:"
-          print*, s
-          print*, "VT:"
-          call print_matrix(vt)
+          ! print*, "U:"
+          ! call print_matrix(u)
+          ! print*, "S:"
+          ! print*, s
+          ! print*, "VT:"
+          ! call print_matrix(vt)
           Ainv = 0.d0
           do i = 1, size(s_dagger)
             Ainv(i,i)= s_dagger(i)
