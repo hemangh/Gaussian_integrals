@@ -143,13 +143,29 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
             
             integer, intent(in) :: l1, m1, l2, m2, l3, m3
             real(idp) :: sum3
-            if(m3 /= m1+m2 .or. l3>abs(l1+l2) .or. l3<abs(l1-l2)) then
-                sum3 = 0._idp
-            else
+
+            sum3 = 0._idp
+            
+            if(m3 == m1+m2 .and. l3 <= abs(l1+l2) .and. l3 >= abs(l1-l2)) then
                 sum3 = (2*l1+1) * (2*l2+1)/4._idp/ pi/ (2*l3+1)
                 sum3 = sqrt(sum3) / 2._idp /pi  ! => this is real spherical harmonics extra factor
                 sum3 = sum3 * calculate_cg_coefficients(l1,l2,l3,0,0) * calculate_cg_coefficients(l1,l2,l3,m1,m2) 
+                if(m1>0 .and. m2>0) then
+                    sum3 = sum3 * pi /2.d0
+                else if(m1>0 .and. m2<0 .and. m3<0) then
+                    sum3 = sum3 * pi/2.d0
+                else if(m1<0 .and. m3>0 .and. m3<0) then 
+                    sum3 = sum3 * pi/2.d0
+                else if (m1==0 .and. m2==0) then
+                    sum3 = sum3 * 2.d0 * pi
+                elseif ( m1==m3 .or.  m2==m3) then
+                    sum3 = sum3 * pi
+                else
+                    sum3 = 0._idp
+                end if
+
             endif
+            
             
          end function sum_over_Clebsh_Gordon_Constants
 
@@ -277,7 +293,9 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         call localcartesian_coeff ( Rxyz_coord, powers, A_pqr_ijk)
 
         ! step 2: iterate over l => this is C^{lm}_{apqr}(r) = <G_{pqr} (a, x,y,z, R) | Y_{lm} (omega)> 
-        do l = 0, lmax
+        ! do l = 0, lmax
+        l = 1
+        m = 1
             outer_sum_grid = 0._idp
             ! step 3: find i, j, k combinations 
             do i = 0,size(A_pqr_ijk(:,1))-1
@@ -285,7 +303,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
                     do k = 0,size(A_pqr_ijk(:,3))-1
                         gamma = i + j + k
 
-                        do m = -l, l
+                        ! do m = -l, l
                             ! find all L 
                             inner_outer_sum_grid = 0._idp
                             do l2 = 0, max_l
@@ -362,16 +380,17 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
                             outer_sum_grid(:) = outer_sum_grid(:) + A_pqr_ijk(i,1) * A_pqr_ijk(j,2) * A_pqr_ijk(k,3) &
                             * rthetaphi(:,1) ** gamma * inner_outer_sum_grid(:)
 
-                        end do !m
+                        ! end do !m
 
                     end do !k
                 end do !j
             end do !i
-
+            print*, "norm:", normalization(alpha,powers)
+            print*, "sum:", outer_sum_grid(:), "exp:",exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2)
             coeff(:,l) = 4.d0 * pi* normalization(alpha, powers) &
             * exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2) * outer_sum_grid(:)
 
-        end do !l
+        ! end do !l
 
     end subroutine
 
