@@ -3,7 +3,7 @@ program test_Gauss_expansion
     use constants, only : pi
     use special_functions, only: ikna
     use sphericalHarmonics, only: real_spherical_harmonics
-    use Gaussian_expansion_coefficient_Ylm, only: expansion_primitiveG_Ylm
+    use Gaussian_expansion_coefficient_Ylm
     implicit none
 
     integer :: l
@@ -23,7 +23,7 @@ program test_Gauss_expansion
 
     ! take a fix r, a, R, lm:
     l  = 1
-    m  = 0
+    m  = 1
     ra = 5.d0
     r  = 1.d0
     a  = 1.d0
@@ -42,11 +42,13 @@ program test_Gauss_expansion
     
     print*, "real sphY_l=1,m=0:", Ylm(1,1,0)
 
-    C_10 = 4.d0 * pi * (2.d0 * a/pi) ** (3/4) * exp(-a*(r-R)**2) * mod_bessel * Ylm(1,1,0)
+    C_10 = 4.d0 * pi * (2.d0 * a/pi) ** (3/4) * exp(-a*(r-ra)**2) * mod_bessel * Ylm(1,l,m)
 
     print*, "analytical C_10(r=1.0):", C_10 
 
     grid_point = reshape([r,0.d0,0.d0],(/1,3/))
+    print*, "norm:", normalization(a,[0,0,0])
+    print*, "sum:", mod_bessel * Ylm(1,l,m), "exp:", exp(-a*(r-ra)**2) 
     print*, grid_point(1,1), grid_point(1,2), grid_point(1,3)
     call expansion_primitiveG_Ylm(l, grid_point,[0,0,0],[0.d0,0.d0,ra],a,coeff)
     print*, "my C_10(r=1.0):", coeff(1,0) , coeff(1,1)
