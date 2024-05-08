@@ -9,7 +9,7 @@ use clebsch_gordan_mod, only: calculate_cg_coefficients
 use matrix_operations, only: invs
 use factorials_mod, only: compute_factorials, factorial_2n_minus_1
     implicit none
-    integer, parameter :: max_l = 2
+    integer, parameter :: max_l = 1
     ! Coefficient of x^i y^j z^k = B^{LM}_{ijk} r^{i+j+k} Y_{LM}   
     ! (L, M, i, j, k)                                    
     ! real(idp) :: xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
@@ -159,7 +159,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
                 else if (m1==0 .and. m2==0) then
                     sum3 = sum3 * 2.d0 * pi
                 elseif ( m1==m3 .or.  m2==m3) then
-                    sum3 = sum3 * pi
+                    sum3 = sum3 * 2.d0* pi
                 else
                     sum3 = 0._idp
                 end if
@@ -227,7 +227,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         !    if gamma is even and L = {1,3,..,gamma} if gamma is odd 
         ! 3) for each l and L pair find l' so that |L-l'| <= l <= |L + l'|
         ! 4) M + m' = m 
-        ! 5) sum over modified spherical Bessels with index l' and Y_{l',m'} (R_A)
+        ! 5) sum over modified spherical Bessels with index l' and Y_{l',m'} (R_A) there is a factor of 2 if m != 0 
         ! 7) sum over L, M index of B^{LM}_{i,j,k} * Clebsh_Gordan(lm,LM|l'm') * Clebsh_Gordan(l0,L0|l'0) 
         ! 8) if m >=0 M >=0 and m'>=0 else if m<0 either M>=0 and m'<0 or M<0 and m'>=0 
         ! 
@@ -238,7 +238,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         integer, intent(in) :: powers(3) ! (x,y,z)
         real(idp), intent(in) :: Rxyz_coord(3) !(Rx, Ry, Rz)
         real(idp), intent(in) :: alpha ! exponent of Gaussian
-        real(idp), intent(out), allocatable :: coeff(:,:)  !(num_gridpts,0:lmax)
+        real(idp), intent(out), allocatable :: coeff(:,:,:)  !(num_gridpts,0:lmax,-lmax:lmax)
 
         
         integer :: i, j, k, l, m
@@ -269,7 +269,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         RAsph_coord = cart2sph(Rxyz_coord)
 
         ! allocate the variable arrays
-        allocate(coeff(num_gridpts,0:lmax), outer_sum_grid(num_gridpts))
+        allocate(coeff(num_gridpts,0:lmax,-lmax:lmax), outer_sum_grid(num_gridpts))
         allocate(inner_outer_sum_grid(num_gridpts))
         allocate(bessel_argument(num_gridpts))
         allocate(mod_bessel(num_gridpts,0:max(max_l,lmax)))
@@ -292,105 +292,113 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         ! step 1: find A coeff
         call localcartesian_coeff ( Rxyz_coord, powers, A_pqr_ijk)
 
+        gamma = sum(powers)
+
+        coeff = 0._idp
         ! step 2: iterate over l => this is C^{lm}_{apqr}(r) = <G_{pqr} (a, x,y,z, R) | Y_{lm} (omega)> 
-        ! do l = 0, lmax
-        l = 1
-        m = 1
+       
+        do l = 0, lmax
+        
+           do m = -l, l
             outer_sum_grid = 0._idp
             ! step 3: find i, j, k combinations 
-            do i = 0,size(A_pqr_ijk(:,1))-1
-                do j = 0,size(A_pqr_ijk(:,2))-1
-                    do k = 0,size(A_pqr_ijk(:,3))-1
-                        gamma = i + j + k
+            do i = 0,gamma 
+                do j = 0,gamma-i
+                    k = gamma - i - j
 
-                        ! do m = -l, l
-                            ! find all L 
-                            inner_outer_sum_grid = 0._idp
-                            do l2 = 0, max_l
-                                do m2 = -l2, l2
-                                    inner_sum = 0._idp
-                                    ! do l1 = gamma, 0, -2
-                                       
-                                    !     if(l1<0) exit
-                                        
-                                    !     ! step 4: find B coeff
-                                    !     call get_coeff_b(l1, coeff_BLM_ijk)
+                    ! do m = -l, l
+                        ! find all L 
+                        inner_outer_sum_grid = 0._idp
+                        do l2 = 0, max_l
+                            do m2 = -l2, l2
+                                inner_sum = 0._idp
+                                ! do l1 = gamma, 0, -2
+                                    
+                                !     if(l1<0) exit
+                                    
+                                !     ! step 4: find B coeff
+                                !     call get_coeff_b(l1, coeff_BLM_ijk)
 
-                                    !     !find all l' => Sum_{l2,m2} Exp(-2arR) i_l2(2arR) Y_{l2,m2} (\hat{R})
-                                    !     l2_min = abs(l-l1)
-                                    !     l2_max = l+l1
+                                !     !find all l' => Sum_{l2,m2} Exp(-2arR) i_l2(2arR) Y_{l2,m2} (\hat{R})
+                                !     l2_min = abs(l-l1)
+                                !     l2_max = l+l1
 
-                                    !     if (l2 <= l2_max .and. l2 <= l2_min) then
-                                    !         ! Adjust loop bounds for m2
-                                    !         if (l2 == 0) then
-                                    !             m2 = 0
-                                    !             ! Adjust loop bounds for m1
-                                    !             if (l1 == 0) then
-                                    !                 m1 = 0
-                                    !                 if (m1 + m2 == m) then
-                                    !                     sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                    !                     inner_sum_grid(:) = inner_sum_grid(:) + &
-                                    !                      coeff_BLM_ijk(i, j, k, m) * sum
-                                    !                 end if
-                                    !             else
-                                    !                 do m1 = -l1, l1
-                                    !                     if (m1 + m2 == m) then
-                                    !                         sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                    !                         inner_sum_grid(:) = inner_sum_grid(:) + &
-                                    !                          coeff_BLM_ijk(i, j, k, m) * sum
-                                    !                     end if
-                                    !                 end do
-                                    !             end if
-                                    !         else
-                                    !             do m2 = -l2, l2
-                                    !                 ! Adjust loop bounds for m1
-                                    !                 if (l1 == 0) then
-                                    !                     m1 = 0
-                                    !                     if (m1 + m2 == m) then
-                                    !                         sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                    !                         inner_sum_grid(:) = inner_sum_grid(:) + &
-                                    !                         coeff_BLM_ijk(i, j, k, m) * sum
-                                    !                     end if
-                                    !                 else
-                                    !                     do m1 = -l1, l1
-                                    !                         if (m1 + m2 == m) then
-                                    !                             sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                    !                             inner_sum_grid(:) = inner_sum_grid(:) + &
-                                    !                              coeff_BLM_ijk(i, j, k, m) * sum
-                                    !                         end if
-                                    !                     end do
-                                    !                 end if
-                                    !             end do
-                                    !         end if
-                                    !     end if
-                                        
+                                !     if (l2 <= l2_max .and. l2 <= l2_min) then
+                                !         ! Adjust loop bounds for m2
+                                !         if (l2 == 0) then
+                                !             m2 = 0
+                                !             ! Adjust loop bounds for m1
+                                !             if (l1 == 0) then
+                                !                 m1 = 0
+                                !                 if (m1 + m2 == m) then
+                                !                     sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                                !                     inner_sum_grid(:) = inner_sum_grid(:) + &
+                                !                      coeff_BLM_ijk(i, j, k, m) * sum
+                                !                 end if
+                                !             else
+                                !                 do m1 = -l1, l1
+                                !                     if (m1 + m2 == m) then
+                                !                         sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                                !                         inner_sum_grid(:) = inner_sum_grid(:) + &
+                                !                          coeff_BLM_ijk(i, j, k, m) * sum
+                                !                     end if
+                                !                 end do
+                                !             end if
+                                !         else
+                                !             do m2 = -l2, l2
+                                !                 ! Adjust loop bounds for m1
+                                !                 if (l1 == 0) then
+                                !                     m1 = 0
+                                !                     if (m1 + m2 == m) then
+                                !                         sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                                !                         inner_sum_grid(:) = inner_sum_grid(:) + &
+                                !                         coeff_BLM_ijk(i, j, k, m) * sum
+                                !                     end if
+                                !                 else
+                                !                     do m1 = -l1, l1
+                                !                         if (m1 + m2 == m) then
+                                !                             sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                                !                             inner_sum_grid(:) = inner_sum_grid(:) + &
+                                !                              coeff_BLM_ijk(i, j, k, m) * sum
+                                !                         end if
+                                !                     end do
+                                !                 end if
+                                !             end do
+                                !         end if
+                                !     end if
+                                    
 
-                                        
-                                    ! end do !l1
-                                
-                                    inner_sum = sum_inner_most(l,l2,m,m2,i,j,k)
-                                
-                                    inner_outer_sum_grid(:) =  inner_outer_sum_grid(:) &
-                                    + mod_bessel(:,l2) * Ylm(1,l2,m2) * inner_sum
-                                
-                                end do !m2
-                                
-                            end do !l2
+                                    
+                                ! end do !l1
+                            
+                                inner_sum = sum_inner_most(l,l2,m,m2,i,j,k)
+                            
+                                inner_outer_sum_grid(:) =  inner_outer_sum_grid(:) &
+                                + mod_bessel(:,l2) * Ylm(:,l2,m2) * inner_sum
 
-                            outer_sum_grid(:) = outer_sum_grid(:) + A_pqr_ijk(i,1) * A_pqr_ijk(j,2) * A_pqr_ijk(k,3) &
-                            * rthetaphi(:,1) ** gamma * inner_outer_sum_grid(:)
+                                print'("real sphY_l=",I0,",m=",I0,":",E15.8,", B_",I0,":",E15.8)', &
+                                l2,m2,Ylm(1,l2,m2),l, mod_bessel(1,l2)
+                            
+                            end do !m2
+                            
+                        end do !l2
 
-                        ! end do !m
+                        outer_sum_grid(:) = outer_sum_grid(:) + A_pqr_ijk(i,1) * A_pqr_ijk(j,2) * A_pqr_ijk(k,3) &
+                        * rthetaphi(:,1) ** (i+j+k) * inner_outer_sum_grid(:)
 
-                    end do !k
+                    ! end do !m
+
+                
                 end do !j
             end do !i
-            print*, "norm:", normalization(alpha,powers)
-            print*, "sum:", outer_sum_grid(:), "exp:",exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2)
-            coeff(:,l) = 4.d0 * pi* normalization(alpha, powers) &
+        
+            !print*, "norm:", normalization(alpha,powers)
+            
+            !print*, "sum:", outer_sum_grid(:), "exp:",exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2)
+            coeff(:,l,m) = 4.d0 * pi* normalization(alpha, powers) &
             * exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2) * outer_sum_grid(:)
-
-        ! end do !l
+        end do !m
+        end do !l
 
     end subroutine
 
