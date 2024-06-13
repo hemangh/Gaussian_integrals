@@ -3,46 +3,22 @@ use precision, only: idp
 use constants, only: pi
 use factorials_mod, only: binomial_coeff
 use conversions, only: cart2sph
-use special_functions, only: ikna
+use special_functions, only: sphi
 use sphericalHarmonics, only: real_spherical_harmonics, YLM_2_XYZ
 use clebsch_gordan_mod, only: calculate_cg_coefficients
 use matrix_operations, only: invs
 use factorials_mod, only: compute_factorials, factorial_2n_minus_1
+use integrals_3rspH_mod, only: read_integrals_3rspH
     implicit none
-    integer, parameter :: max_l = 1
+    integer, parameter :: max_l = 3
     ! Coefficient of x^i y^j z^k = B^{LM}_{ijk} r^{i+j+k} Y_{LM}   
     ! (L, M, i, j, k)                                    
-    ! real(idp) :: xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
+    real(idp) :: xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
+    logical :: set_xyz_YLM = .false.
+    ! integrals <Y_l1,m1| Y_l2,m2 | Y_l3,m3>, allocated as (l1,l2,l3,m1,m2,m3)
+    real(idp), allocatable :: integrals_3rspH(:,:,:,:,:,:)
 
-    ! xyz_YLM_coefficient(0, 0, 0, 0, 0) = 0.28209479177387814d0 ! Y_00
-
-    ! xyz_YLM_coefficient(1, -1, 0, 1, 0) = 0.4886025119029199d0  ! Y_1m1
-    ! xyz_YLM_coefficient(1, 0, 0, 0, 0)  = 0.4886025119029199d0  ! Y_10
-    ! xyz_YLM_coefficient(1, 1, 1, 0, 0)  = 0.4886025119029199d0  ! Y_11
-
-    ! xyz_YLM_coefficient(2, -2, 1, 1, 0) = 0.31539156525252005d0 ! Y_2m2
-    ! xyz_YLM_coefficient(2, -1, 0, 1, 0) = 0.5462742152960396d0  ! Y_2m1
-    ! xyz_YLM_coefficient(2, 0, 1, 1, 0)  = 0.5462742152960396d0   ! Y_20
-    ! xyz_YLM_coefficient(2, 1, 1, 1, 0)  = 0.5462742152960396d0   ! Y_21
-    ! xyz_YLM_coefficient(2, 2, 1, 1, 0)  = 0.5462742152960396d0   ! Y_22
-  
-    ! xyz_YLM_coefficient(3, -3, 0, 3, 0) = 0.13895681407382172d0 ! Y_3m3
-    ! xyz_YLM_coefficient(3, -2, 1, 1, 0) = 0.5900435899266439d0  ! Y_3m2
-    ! xyz_YLM_coefficient(3, -1, 0, 1, 0) = 0.28449475869314084d0 ! Y_3m1
-    ! xyz_YLM_coefficient(3, 0, 1, 1, 0) = 0.5900435899266439d0   ! Y_30
-    ! xyz_YLM_coefficient(3, 1, 1, 1, 0) = 0.28449475869314084d0  ! Y_31
-    ! xyz_YLM_coefficient(3, 2, 1, 1, 0) = 0.5900435899266439d0   ! Y_32
-    ! xyz_YLM_coefficient(3, 3, 0, 3, 0) = 0.13895681407382172d0 ! Y_33
-  
-    ! xyz_YLM_coefficient(4, -4, 3, 1, 0) = 0.4886025119029199d0  ! Y_4m4
-    ! xyz_YLM_coefficient(4, -3, 0, 3, 0) = 0.46557123656573955d0 ! Y_4m3
-    ! xyz_YLM_coefficient(4, -2, 1, 1, 0) = 0.12593510574971699d0 ! Y_4m2
-    ! xyz_YLM_coefficient(4, -1, 0, 1, 0) = 0.12593510574971699d0 ! Y_4m1
-    ! xyz_YLM_coefficient(4, 0, 4, 0, 0) = 0.119514472455632d0   ! Y_40
-    ! xyz_YLM_coefficient(4, 1, 0, 3, 0) = 0.12593510574971699d0 ! Y_41
-    ! xyz_YLM_coefficient(4, 2, 2, 2, 0) = 0.059857729514531774d0 ! Y_42
-    ! xyz_YLM_coefficient(4, 3, 0, 3, 0) = 0.12593510574971699d0 ! Y_43
-    ! xyz_YLM_coefficient(4, 4, 4, 0, 0) = 0.02370600766752924d0 ! Y_44
+   
 
     contains
     !***********************************************************************************************
@@ -76,17 +52,17 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
 
         !(x-Rx)^l => \sum_{k=0}^l binomial_coeff(l,k) * (x)^{l-k} * Rx^k 
         do k = 0, l
-            coeff(l-k,1) = binomial_coeff(l,k) * Rxyz_coord(1)**k !* x**(l-k)
+            coeff(l-k,1) = binomial_coeff(l,k) * (-Rxyz_coord(1))**k !* x**(l-k)
         end do
 
         !(y-Ry)^m => \sum_{k=0}^m binomial_coeff(m,k) * (y)^{m-k} * Ry^k 
         do k = 0, m
-            coeff(m-k,2) = binomial_coeff(m,k) * Rxyz_coord(2)**k !* y**(m-k)
+            coeff(m-k,2) = binomial_coeff(m,k) * (-Rxyz_coord(2))**k !* y**(m-k)
         end do
 
         !(z-Rz)^n => \sum_{k=0}^n binomial_coeff(n,k) * (z)^{n-k} * Rz^k 
         do k = 0, n
-            coeff(n-k,3) = binomial_coeff(n,k) * Rxyz_coord(3)**k !* z**(n-k)
+            coeff(n-k,3) = binomial_coeff(n,k) * (-Rxyz_coord(3))**k !* z**(n-k)
         end do
 
     end subroutine localcartesian_coeff
@@ -113,28 +89,28 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
     ! 
     ! \sum_{l,m} exp(-2*a*RA*r)* i_l(2*a*RA*r) * Y_{lm}(\hat{RA})
     ! 
-    function expansion_exp_Bessel_i_Ylm(a, r, RAsph_coord, ylm, lmin, lmax) result(term)
-        real(idp) :: a, r, RAsph_coord(3)
-        real(idp) :: ylm
-        integer   :: lmin, lmax
+    ! function expansion_exp_Bessel_i_Ylm(a, r, RAsph_coord, ylm, lmin, lmax) result(term)
+    !     real(idp) :: a, r, RAsph_coord(3)
+    !     real(idp) :: ylm
+    !     integer   :: lmin, lmax
 
-        real(idp) :: term
+    !     real(idp) :: term
         
-        integer :: nm
-        real(idp) , dimension(0:lmax) :: bi, di, bk, dk
-        real(idp) :: x
-        integer :: l, m
+    !     integer :: nm
+    !     real(idp) , dimension(0:lmax) :: bi, di, bk, dk
+    !     real(idp) :: x
+    !     integer :: l, m
 
-        term = 0._idp
-        x = 2._idp * a * r * RAsph_coord(1)
+    !     term = 0._idp
+    !     x = 2._idp * a * r * RAsph_coord(1)
         
-        call ikna(lmax, x, nm, bi, di, bk, dk)
-        ! call real_spherical_harmonics(Ylm,RAsph_coord(2),RAsph_coord(3),1,lmax) !allocated according to phi/theta dim & lmax in the routine
+    !     call ikna(lmax, x, nm, bi, di, bk, dk)
+    !     ! call real_spherical_harmonics(Ylm,RAsph_coord(2),RAsph_coord(3),1,lmax) !allocated according to phi/theta dim & lmax in the routine
          
-        term = term + exp(-x) * bi(l) * Ylm ! * B^{lm}_{ijk} * Ylm(r) * 
+    !     term = term + exp(-x) * bi(l) * Ylm ! * B^{lm}_{ijk} * Ylm(r) * 
   
 
-        end function expansion_exp_Bessel_i_Ylm
+    !     end function expansion_exp_Bessel_i_Ylm
 
         !
         ! \sum_{l3, m3} \int Y_{l1,m1} * Y_{l2, m2} * Y_{l3, m3}
@@ -145,8 +121,10 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
             real(idp) :: sum3
 
             sum3 = 0._idp
-            
+
+
             if(m3 == m1+m2 .and. l3 <= abs(l1+l2) .and. l3 >= abs(l1-l2)) then
+            
                 sum3 = (2*l1+1) * (2*l2+1)/4._idp/ pi/ (2*l3+1)
                 sum3 = sqrt(sum3) / 2._idp /pi  ! => this is real spherical harmonics extra factor
                 sum3 = sum3 * calculate_cg_coefficients(l1,l2,l3,0,0) * calculate_cg_coefficients(l1,l2,l3,m1,m2) 
@@ -213,6 +191,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
                     do m = -l, l
                         mcount = mcount+1
                         coeff_BLM_ijk(i,j,k, m) = invCoef(count,mcount)
+                        xyz_YLM_coefficient(l,m,i,j,k) = coeff_BLM_ijk(i,j,k, m)
                     end do
                 end do
 
@@ -252,13 +231,38 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         real(idp), allocatable :: Ylm(:,:,:)
         real(idp), allocatable :: bessel_argument(:), mod_bessel(:,:)
         real(idp) , allocatable :: outer_sum_grid(:), inner_outer_sum_grid(:)
-        real(idp) :: inner_sum
+        real(idp) :: inner_sum, A_coeff
 
         real(idp) ::RAsph_coord(3)
-        real(idp) , dimension(0:lmax) :: bi, di, bk, dk
+        
+        integer:: lmaximum ! max(lmax, max_l)
+        REAL(kind = idp ), allocatable :: si (:)  ! modified spherical Bessel function i_l(x) (0:lmaximum)
+        REAL(kind = idp ), allocatable :: dsi (:) ! first derivative of modified spherical Bessel function i_l(x) [not used]
         real(idp) :: sum
         
+        if (.not. set_xyz_YLM) then
+            xyz_YLM_coefficient = 0._idp
+            do l = 0, lmax
+                 call get_coeff_b(l, coeff_BLM_ijk) ! This has to change.
+             end do
+             set_xyz_YLM = .true.
+        end if
+        ! print*,xyz_YLM_coefficient(0,0,0,0,0)
+        ! print*,xyz_YLM_coefficient(1,0,0,0,1)
+        ! print*,xyz_YLM_coefficient(1,1,1,0,0)
+        ! print*,xyz_YLM_coefficient(1,-1,0,1,0)
+
+        ! print*,xyz_YLM_coefficient(2,0,0,0,2)
+        ! print*,xyz_YLM_coefficient(2,1,1,0,1)
+        ! print*,xyz_YLM_coefficient(2,-1,0,1,1)
+        ! print*,xyz_YLM_coefficient(2,2,0,2,0), xyz_YLM_coefficient(2,2,2,0,0)
+        ! print*,xyz_YLM_coefficient(2,-2,1,1,0)
         ! step 0: convert cartesian to spherical
+
+        ! Read all the integrals of 3 real spherical harmonics
+        ! Goes l1, l2, l3, m1, m2, m3
+        call read_integrals_3rspH(integrals_3rspH, "../../input/integrals_3rspH.txt")
+
         num_gridpts = size(grid_points,1)
         allocate(rthetaphi(num_gridpts,3))
         do igrid = 1, num_gridpts
@@ -269,24 +273,26 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         RAsph_coord = cart2sph(Rxyz_coord)
 
         ! allocate the variable arrays
+        lmaximum = max(max_l,lmax)
         allocate(coeff(num_gridpts,0:lmax,-lmax:lmax), outer_sum_grid(num_gridpts))
         allocate(inner_outer_sum_grid(num_gridpts))
         allocate(bessel_argument(num_gridpts))
-        allocate(mod_bessel(num_gridpts,0:max(max_l,lmax)))
+        allocate(si(0:lmaximum), dsi(0:lmaximum)) 
+        allocate(mod_bessel(num_gridpts,0:lmaximum))
 
         ! some preperations:
         ! find the modified Bessel functions over grid points:
         bessel_argument(:) = 2._idp * alpha * rthetaphi (:,1) * RAsph_coord(1)
             
         do igrid = 1, num_gridpts
-            call ikna(max(max_l,lmax), bessel_argument(igrid), nm, bi, di, bk, dk)
-            do l = 0, max(max_l,lmax)
-                mod_bessel(igrid,l) = bi(l) * exp(-bessel_argument(igrid))
+            call sphi(lmaximum,bessel_argument(igrid),nm,si,dsi)
+            do l = 0, lmaximum
+                mod_bessel(igrid,l) = si(l) * exp(-bessel_argument(igrid))
             end do
         end do
 
         ! find Ylm of center point over ls
-        call real_spherical_harmonics(Ylm,RAsph_coord(2),RAsph_coord(3),1,max(max_l,lmax))
+        call real_spherical_harmonics(Ylm,RAsph_coord(2),RAsph_coord(3),1,lmaximum)
 
 
         ! step 1: find A coeff
@@ -300,104 +306,50 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         do l = 0, lmax
         
            do m = -l, l
+        ! l =1; m=1
             outer_sum_grid = 0._idp
             ! step 3: find i, j, k combinations 
             do i = 0,gamma 
                 do j = 0,gamma-i
-                    k = gamma - i - j
-
-                    ! do m = -l, l
-                        ! find all L 
+                   do  k = 0,gamma - i - j
+                    
+                    A_coeff = A_pqr_ijk(i,1) * A_pqr_ijk(j,2) * A_pqr_ijk(k,3)
+                    if ( A_coeff /= 0._idp) then
+                        ! find all l prime => l2
                         inner_outer_sum_grid = 0._idp
                         do l2 = 0, max_l
                             do m2 = -l2, l2
-                                inner_sum = 0._idp
-                                ! do l1 = gamma, 0, -2
-                                    
-                                !     if(l1<0) exit
-                                    
-                                !     ! step 4: find B coeff
-                                !     call get_coeff_b(l1, coeff_BLM_ijk)
-
-                                !     !find all l' => Sum_{l2,m2} Exp(-2arR) i_l2(2arR) Y_{l2,m2} (\hat{R})
-                                !     l2_min = abs(l-l1)
-                                !     l2_max = l+l1
-
-                                !     if (l2 <= l2_max .and. l2 <= l2_min) then
-                                !         ! Adjust loop bounds for m2
-                                !         if (l2 == 0) then
-                                !             m2 = 0
-                                !             ! Adjust loop bounds for m1
-                                !             if (l1 == 0) then
-                                !                 m1 = 0
-                                !                 if (m1 + m2 == m) then
-                                !                     sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                !                     inner_sum_grid(:) = inner_sum_grid(:) + &
-                                !                      coeff_BLM_ijk(i, j, k, m) * sum
-                                !                 end if
-                                !             else
-                                !                 do m1 = -l1, l1
-                                !                     if (m1 + m2 == m) then
-                                !                         sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                !                         inner_sum_grid(:) = inner_sum_grid(:) + &
-                                !                          coeff_BLM_ijk(i, j, k, m) * sum
-                                !                     end if
-                                !                 end do
-                                !             end if
-                                !         else
-                                !             do m2 = -l2, l2
-                                !                 ! Adjust loop bounds for m1
-                                !                 if (l1 == 0) then
-                                !                     m1 = 0
-                                !                     if (m1 + m2 == m) then
-                                !                         sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                !                         inner_sum_grid(:) = inner_sum_grid(:) + &
-                                !                         coeff_BLM_ijk(i, j, k, m) * sum
-                                !                     end if
-                                !                 else
-                                !                     do m1 = -l1, l1
-                                !                         if (m1 + m2 == m) then
-                                !                             sum = sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
-                                !                             inner_sum_grid(:) = inner_sum_grid(:) + &
-                                !                              coeff_BLM_ijk(i, j, k, m) * sum
-                                !                         end if
-                                !                     end do
-                                !                 end if
-                                !             end do
-                                !         end if
-                                !     end if
-                                    
-
-                                    
-                                ! end do !l1
+                                ! inner_sum = 0._idp
                             
+                                ! inner sum over LM
                                 inner_sum = sum_inner_most(l,l2,m,m2,i,j,k)
                             
                                 inner_outer_sum_grid(:) =  inner_outer_sum_grid(:) &
-                                + mod_bessel(:,l2) * Ylm(:,l2,m2) * inner_sum
+                                + mod_bessel(:,l2) * Ylm(1,l2,m2) * inner_sum
 
-                                print'("real sphY_l=",I0,",m=",I0,":",E15.8,", B_",I0,":",E15.8)', &
-                                l2,m2,Ylm(1,l2,m2),l, mod_bessel(1,l2)
+                                ! print'("real sphY_l=",I0,",m=",I0,":",E15.8,", B_",I0,":",E15.8)', &
+                                ! l2,m2,Ylm(1,l2,m2),l, mod_bessel(2,l2)
                             
                             end do !m2
                             
                         end do !l2
 
-                        outer_sum_grid(:) = outer_sum_grid(:) + A_pqr_ijk(i,1) * A_pqr_ijk(j,2) * A_pqr_ijk(k,3) &
+                        outer_sum_grid(:) = outer_sum_grid(:) + A_coeff&
                         * rthetaphi(:,1) ** (i+j+k) * inner_outer_sum_grid(:)
+                    end if
 
-                    ! end do !m
 
-                
+                    end do !k
                 end do !j
             end do !i
+            
         
             !print*, "norm:", normalization(alpha,powers)
             
             !print*, "sum:", outer_sum_grid(:), "exp:",exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2)
             coeff(:,l,m) = 4.d0 * pi* normalization(alpha, powers) &
             * exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2) * outer_sum_grid(:)
-        end do !m
+            end do !m
         end do !l
 
     end subroutine
@@ -411,7 +363,7 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
         real(idp):: suml2
 
         integer :: l2, m2, l2_min, gamma
-        real(idp), allocatable :: coeff_BLM_ijk(:,:,:,:)
+        !real(idp), allocatable :: coeff_BLM_ijk(:,:,:,:)
 
         gamma = i + j + k
 
@@ -426,19 +378,21 @@ use factorials_mod, only: compute_factorials, factorial_2n_minus_1
 
         do l2 = l2_min, gamma, 2
 
-            call get_coeff_b(l2, coeff_BLM_ijk)
+            !call get_coeff_b(l2, coeff_BLM_ijk) ! This has to change.
 
             if (l2 == 0) then
 
                 m2 = 0
-                suml2 = suml2 + coeff_BLM_ijk(i,j,k,m2) * sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                ! suml2 = suml2 + coeff_BLM_ijk(i,j,k,m2) * sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                suml2 = suml2 + xyz_YLM_coefficient(l2,m2,i,j,k) * integrals_3rspH(l1, l2, l, m1, m2, m)
  
 
             else
 
                 do m2 = -l2, l2
 
-                    suml2 = suml2 + coeff_BLM_ijk(i,j,k,m2) * sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                    ! suml2 = suml2 + coeff_BLM_ijk(i,j,k,m2) * sum_over_Clebsh_Gordon_Constants(l1, l2, l, m1, m2, m)
+                    suml2 = suml2 + xyz_YLM_coefficient(l2,m2,i,j,k) * integrals_3rspH(l1, l2, l, m1, m2, m)
 
                 end do !m2
 
