@@ -16,24 +16,47 @@ program test_sphHY
     REAL (idp), allocatable, Dimension(:,:,:) :: Ylm
     real(idp),dimension(:,:),allocatable           :: plm
     integer :: i
-
-
+    !**********************************************************************
+    !        pwr(1:3 -->[x,y,z],1:(l+1)*(l+2)/2) powers of the 
+    !                   Cartesian Gaussian in the conventional 
+    !                   ordering described in the icart function.
+    !**********************************************************************
+    !        doubles: coeff(1:2l+1 --> [-m,m],1:(l+1)*(l+2)/2 )
+    !                   the coefficient of transformation of a Cartesian
+    !                   to a Spherical Gaussian.
+    !***********************************************************************
+    ! l = 0
     call YLM_2_XYZ(0,pwr,coeff)
     print*, coeff
-
+    !===================================================
+    !l = 1
     call YLM_2_XYZ(1,pwr,coeff)
     print*, "Coeff matrix l=1:"
     call print_matrix(coeff)
     call print_matrix_int(pwr)
+
+    !check the individual coefficients:
+    if(coeff(3,1) /= sqrt(3._idp/4._idp/pi)) call exit(1)
+    invCoef = invs(coeff)
+    print*,"inverse matrix l=1"
+    call print_matrix(invCoef)
+    call print_matrix(matmul(coeff,invCoef))
+    print*, sqrt(4._idp * pi/3._idp)
+    if(coeff(1,3)/= sqrt(4._idp * pi/3._idp)) call exit(1)
+    
+    !=======================================================
+
+    ! l = 2
 
     call YLM_2_XYZ(2,pwr, coeff)
     ! do i = 1, size(pwr,2)
     !     print*, pwr(:,i), coeff(:,i)
     ! end do
 
-    call print_matrix_int(pwr)
+    
     print*, "Coeff matrix l=2:"
     call print_matrix(coeff)
+    call print_matrix_int(pwr)
 
     ! Now invert the transformation matrix and print it 
     ! print*, size(coeff,1), size(coeff,2)
@@ -44,8 +67,7 @@ program test_sphHY
     print*, "check inverse:"
     call print_matrix(matmul(coeff,invCoef))
 
-
-    
+        
     call YLM_2_XYZ(3, pwr, coeff)
 
     call print_matrix_int(pwr)
