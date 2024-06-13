@@ -11,6 +11,8 @@ target_sources(math_lib
     # clebsch_gordan.f
     clebsh_gordan.f90
     matrix_operations.f90
+    lebedev_quadrature.f90
+    integral_3_real_sphH.f90
 )
 
 target_link_libraries(math_lib PUBLIC utility_lib -llapack -lblas)
