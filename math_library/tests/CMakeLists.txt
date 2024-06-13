@@ -41,3 +41,25 @@ add_test(
   COMMAND
     $<TARGET_FILE:matrix_op_test>
   )
+
+  add_executable(lebedev_test test_lebedev.f90)
+
+  target_link_libraries(lebedev_test PRIVATE math_lib)
+  
+  add_test(
+    NAME
+    lebedev_test
+    COMMAND
+      $<TARGET_FILE:lebedev_test>
+    )
+
+    add_executable(rsph_integral test_integral_3rspH.f90)
+
+    target_link_libraries(rsph_integral PRIVATE math_lib)
+    
+    add_test(
+      NAME
+      rsph_integral
+      COMMAND
+        $<TARGET_FILE:rsph_integral>
+      )
