@@ -272,7 +272,9 @@ contains
         vv = 0
         num = (l+1) * (l+2 ) / 2
         allocate(coeff(2*l+1,num))
+        coeff = 0.d0
         allocate(pwr(3,num))
+        pwr = 0
         Nlm = 1.0
         ! write(*,*) 'Entering YLM_2_XYZ for l = ',l
         count = 1
