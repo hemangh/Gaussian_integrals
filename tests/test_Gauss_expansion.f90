@@ -182,18 +182,18 @@ program test_Gauss_expansion
     
     ! Choose px function to expand:
 
-    call expansion_primitiveG_Ylm(lmax =lmax, grid_points =rand_grid_pt,powers =[1,0,0],&
-                                    Rxyz_coord = Rxyz_coord, alpha = a,coeff = coeff)
+    ! call expansion_primitiveG_Ylm(lmax =lmax, grid_points =rand_grid_pt,powers =[1,0,0],&
+    !                                 Rxyz_coord = Rxyz_coord, alpha = a,coeff = coeff)
     
-    pxgrid = px(leb_quad%num_points,rand_grid_pt, Rxyz_coord,a)
-    allocate(r2(leb_quad%num_points))
-    r2(:) = &
-   (leb_quad%cart_coord(:,1) - Rxyz_coord(1)) **2 + (leb_quad%cart_coord(:,2) - Rxyz_coord(2)) **2 + &
-   (leb_quad%cart_coord(:,3) - Rxyz_coord(3)) **2
+    ! pxgrid = px(leb_quad%num_points,rand_grid_pt, Rxyz_coord,a)
+!     allocate(r2(leb_quad%num_points))
+!     r2(:) = &
+!    (leb_quad%cart_coord(:,1) - Rxyz_coord(1)) **2 + (leb_quad%cart_coord(:,2) - Rxyz_coord(2)) **2 + &
+!    (leb_quad%cart_coord(:,3) - Rxyz_coord(3)) **2
     
-   print*,"Explicit sum on grid: (C_1,1:)", &
-   4._idp*pi*normalization(a,[1,0,0])*&
-   sum((leb_quad%cart_coord(:,1) - Rxyz_coord(1)) * exp(-a*r2(:)) * Ylm(:,1,1) * leb_quad%w(:))
+!    print*,"Explicit sum on grid: (C_1,1:)", &
+!    4._idp*pi*normalization(a,[1,0,0])*&
+!    sum((leb_quad%cart_coord(:,1) - Rxyz_coord(1)) * exp(-a*r2(:)) * Ylm(:,1,1) * leb_quad%w(:))
     
 
     ! ! do i = 1, num_pt
@@ -206,12 +206,42 @@ program test_Gauss_expansion
 
     !     sum_g = 0._idp
 
-    print*,"px:"
+    ! print*,"px:"
+
+    !     do il = 0, lmax
+    !         do m = -il, il
+
+   
+    !             ! print*, sum(4.d0*pi* Ylm(:,il,m) * Ylm(:,il,m)*leb_quad%w(:))
+
+    !             sum_g = sum(4.d0*pi*pxgrid(:) * Ylm(:,il,m)*leb_quad%w(:))
+
+    !             ! check: are all clm(r) the same?
+    !             print'("C_",I0,",",I0,"(r=",F3.1,"):", 1E15.8)',il,m,scale, coeff(1,il,m)!, &
+    !             !coeff(leb_quad%num_points/2,il,m), coeff(leb_quad%num_points,il,m)
+
+    !             print'("Numeric: C_",I0,",",I0,"(r=",F3.1,"):", 3E15.8)',il,m,scale, sum_g
+    !             if(abs(sum_g)>=1.e-12_idp)print*,"ratio:", coeff(1,il,m)/sum_g
+
+    ! !         sum_g = sum_g + coeff(i,il,m) * Ylm(1,il,m) 
+
+    !         end do !l
+    !     end do !m
+
+
+        print*,"dxy:"
+
+        ! Choose dxy function to expand:
+
+        call expansion_primitiveG_Ylm(lmax =lmax, grid_points =rand_grid_pt,powers =[1,1,0],&
+        Rxyz_coord = Rxyz_coord, alpha = a,coeff = coeff)
+
+        pxgrid = dxy(leb_quad%num_points,rand_grid_pt, Rxyz_coord,a)
 
         do il = 0, lmax
             do m = -il, il
 
-   
+                ! il = 0 ; m =0
                 ! print*, sum(4.d0*pi* Ylm(:,il,m) * Ylm(:,il,m)*leb_quad%w(:))
 
                 sum_g = sum(4.d0*pi*pxgrid(:) * Ylm(:,il,m)*leb_quad%w(:))
@@ -227,6 +257,8 @@ program test_Gauss_expansion
 
             end do !l
         end do !m
+
+        ! print*, "B2-2_110 (Analytic):", 2.0_idp * sqrt(pi/15.0_idp), "B2-2_110 (Calculated):",xyz_YLM_coefficient(2,-2,1,1,0)
 
     !     print*, sum_g, rand_fun
 
@@ -414,7 +446,24 @@ program test_Gauss_expansion
         pzval(:) = normalization(alpha,[0,0,1])*(new_coord(:,3)) * exp(-alpha*r2(:))
 
     end function
+
+    function dxy(num_pt,cart_coord, center_coord, alpha) result(dval)
     
-    
+        integer   :: num_pt
+        real(idp) :: cart_coord(num_pt,3), center_coord(3)
+        real(idp) :: alpha
+        real(idp) :: dval(num_pt)
+
+        real(idp) :: new_coord(num_pt,3)
+        real(idp) :: r2(num_pt)
+        
+        do i = 1, num_pt
+            new_coord(i,1:3) = cart_coord(i,1:3) - center_coord(1:3)
+            r2(i) = dot_product(new_coord(i,:),new_coord(i,:))
+        end do
+
+        dval(:) = normalization(alpha,[1,1,0])*(new_coord(:,1)) * (new_coord(:,2))* exp(-alpha*r2(:))
+
+    end function
     
 end program test_Gauss_expansion
