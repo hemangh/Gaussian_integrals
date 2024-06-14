@@ -10,7 +10,7 @@ use matrix_operations, only: invs
 use factorials_mod, only: compute_factorials, factorial_2n_minus_1
 use integrals_3rspH_mod, only: read_integrals_3rspH
     implicit none
-    integer, parameter :: max_l = 3
+    integer, parameter :: max_l =5 
     ! Coefficient of x^i y^j z^k = B^{LM}_{ijk} r^{i+j+k} Y_{LM}   
     ! (L, M, i, j, k)                                    
     real(idp) :: xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
@@ -47,7 +47,8 @@ use integrals_3rspH_mod, only: read_integrals_3rspH
         l = pwr(1)
         m = pwr(2)
         n = pwr(3)
-        allocate(coeff(0:max(l,m,n),3))
+        k = sum(pwr)
+        allocate(coeff(0:k,3))
         coeff = 0._idp
 
         !(x-Rx)^l => \sum_{k=0}^l binomial_coeff(l,k) * (x)^{l-k} * Rx^k 
@@ -306,7 +307,7 @@ use integrals_3rspH_mod, only: read_integrals_3rspH
         do l = 0, lmax
         
            do m = -l, l
-        ! l =1; m=1
+        ! l =0; m=0
             outer_sum_grid = 0._idp
             ! step 3: find i, j, k combinations 
             do i = 0,gamma 
