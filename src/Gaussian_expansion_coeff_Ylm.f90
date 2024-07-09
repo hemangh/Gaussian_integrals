@@ -272,16 +272,7 @@ end subroutine get_coeff_b
              end do
              set_xyz_YLM = .true.
         end if
-        ! print*,xyz_YLM_coefficient(0,0,0,0,0)
-        ! print*,xyz_YLM_coefficient(1,0,0,0,1)
-        ! print*,xyz_YLM_coefficient(1,1,1,0,0)
-        ! print*,xyz_YLM_coefficient(1,-1,0,1,0)
-
-        ! print*,xyz_YLM_coefficient(2,0,0,0,2)
-        ! print*,xyz_YLM_coefficient(2,1,1,0,1)
-        ! print*,xyz_YLM_coefficient(2,-1,0,1,1)
-        ! print*,xyz_YLM_coefficient(2,2,0,2,0), xyz_YLM_coefficient(2,2,2,0,0)
-        ! print*,xyz_YLM_coefficient(2,-2,1,1,0)
+ 
         ! step 0: convert cartesian to spherical
 
         ! Read all the integrals of 3 real spherical harmonics
@@ -344,7 +335,6 @@ end subroutine get_coeff_b
                         inner_outer_sum_grid = 0._idp
                         do l2 = 0, max_l
                             do m2 = -l2, l2
-                                ! inner_sum = 0._idp
                             
                                 ! inner sum over LM
                                 inner_sum = sum_inner_most(l,l2,m,m2,i,j,k)
@@ -352,8 +342,6 @@ end subroutine get_coeff_b
                                 inner_outer_sum_grid(:) =  inner_outer_sum_grid(:) &
                                 + mod_bessel(:,l2) * Ylm(1,l2,m2) * inner_sum
 
-                                ! print'("real sphY_l=",I0,",m=",I0,":",E15.8,", B_",I0,":",E15.8)', &
-                                ! l2,m2,Ylm(1,l2,m2),l, mod_bessel(2,l2)
                             
                             end do !m2
                             
@@ -368,10 +356,6 @@ end subroutine get_coeff_b
                 end do !j
             end do !i
             
-        
-            !print*, "norm:", normalization(alpha,powers)
-            
-            !print*, "sum:", outer_sum_grid(:), "exp:",exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2)
             coeff(:,l,m) = 4.d0 * pi* normalization(alpha, powers) &
             * exp(-alpha*(rthetaphi(:,1)-RAsph_coord(1))**2) * outer_sum_grid(:)
             end do !m
