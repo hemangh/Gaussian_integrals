@@ -27,7 +27,7 @@ program test_Gauss_expansion
     
     type(Lebedev_type) :: leb_quad
 
-    integer, parameter :: lmax = 2
+    integer, parameter :: lmax = 4
 
     REAL(kind = idp ), DIMENSION(0:2*lmax) :: si
     REAL(kind = idp ), DIMENSION(0:2*lmax) :: dsi
