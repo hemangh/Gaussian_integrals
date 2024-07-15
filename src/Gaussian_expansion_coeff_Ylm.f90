@@ -10,13 +10,15 @@ use matrix_operations, only: invs
 use factorials_mod, only: compute_factorials, factorial_2n_minus_1
 use integrals_3rspH_mod, only: read_integrals_3rspH
     implicit none
-    integer, parameter :: max_l =5 
+    ! integer, parameter :: max_l =5 
     ! Coefficient of x^i y^j z^k = B^{LM}_{ijk} r^{i+j+k} Y_{LM}   
     ! (L, M, i, j, k)                                    
-    real(idp) :: xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
+    real(idp), allocatable  :: xyz_YLM_coefficient(:,:,:,:,:)!(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
     logical :: set_xyz_YLM = .false. !key to prevent multiple computation of the xyz_YLM_coefficient
+    
     ! integrals <Y_l1,m1| Y_l2,m2 | Y_l3,m3>, allocated as (l1,l2,l3,m1,m2,m3)
     real(idp), allocatable :: integrals_3rspH(:,:,:,:,:,:)
+    logical :: set_3Ylm_integrals = .false. !key to prevent multiple computation of integrals_3rspH
 
    
 
@@ -250,6 +252,10 @@ end subroutine get_coeff_b
         integer :: igrid, num_gridpts
         integer :: nm
         integer :: l1, l2_min, l2_max, l2, m1, m2
+        integer :: max_l
+        
+
+
         real(idp), allocatable :: rthetaphi(:,:)  !(num of points, 1:3 (r,theta,phi)) spherical coord
         real(idp), allocatable :: A_pqr_ijk(:,:)  ! allocated as (0:max(powers),1:3)
         real(idp), allocatable :: coeff_BLM_ijk (:,:,:,:) !(i,j,k,m)
@@ -260,25 +266,36 @@ end subroutine get_coeff_b
 
         real(idp) ::RAsph_coord(3)
         
-        integer:: lmaximum ! max(lmax, max_l)
-        REAL(kind = idp ), allocatable :: si (:)  ! modified spherical Bessel function i_l(x) (0:lmaximum)
+        REAL(kind = idp ), allocatable :: si (:)  ! modified spherical Bessel function i_l(x) (0:max_l)
         REAL(kind = idp ), allocatable :: dsi (:) ! first derivative of modified spherical Bessel function i_l(x) [not used]
         real(idp) :: sum
         
+
+        gamma = sum(powers)
+
+        max_l = lmax + gamma
+        
         if (.not. set_xyz_YLM) then
+            allocate(xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l))
             xyz_YLM_coefficient = 0._idp
             do l = 0, lmax
-                 call get_coeff_b(l, coeff_BLM_ijk) ! This has to change.
+                 call get_coeff_b(l, coeff_BLM_ijk) 
              end do
              set_xyz_YLM = .true.
         end if
  
-        ! step 0: convert cartesian to spherical
 
         ! Read all the integrals of 3 real spherical harmonics
         ! Goes l1, l2, l3, m1, m2, m3
-        call read_integrals_3rspH(integrals_3rspH, "../../input/integrals_3rspH.txt")
+        if (.not. set_3Ylm_integrals) then
 
+            call read_integrals_3rspH(integrals_3rspH, "../../input/integrals_3rspH.txt")
+
+            set_3Ylm_integrals = .true.
+
+        end if
+
+        ! step 0: convert cartesian to spherical
         num_gridpts = size(grid_points,1)
         allocate(rthetaphi(num_gridpts,3))
         do igrid = 1, num_gridpts
@@ -289,32 +306,32 @@ end subroutine get_coeff_b
         RAsph_coord = cart2sph(Rxyz_coord)
 
         ! allocate the variable arrays
-        lmaximum = max(max_l,lmax)
+        
         allocate(coeff(num_gridpts,0:lmax,-lmax:lmax), outer_sum_grid(num_gridpts))
         allocate(inner_outer_sum_grid(num_gridpts))
         allocate(bessel_argument(num_gridpts))
-        allocate(si(0:lmaximum), dsi(0:lmaximum)) 
-        allocate(mod_bessel(num_gridpts,0:lmaximum))
+        allocate(si(0:max_l), dsi(0:max_l)) 
+        allocate(mod_bessel(num_gridpts,0:max_l))
 
         ! some preperations:
         ! find the modified Bessel functions over grid points:
         bessel_argument(:) = 2._idp * alpha * rthetaphi (:,1) * RAsph_coord(1)
             
         do igrid = 1, num_gridpts
-            call sphi(lmaximum,bessel_argument(igrid),nm,si,dsi)
-            do l = 0, lmaximum
+            call sphi(max_l,bessel_argument(igrid),nm,si,dsi)
+            do l = 0, max_l
                 mod_bessel(igrid,l) = si(l) * exp(-bessel_argument(igrid))
             end do
         end do
 
         ! find Ylm of center point over ls
-        call real_spherical_harmonics(Ylm,RAsph_coord(2),RAsph_coord(3),1,lmaximum)
+        call real_spherical_harmonics(Ylm,RAsph_coord(2),RAsph_coord(3),1,max_l)
 
 
         ! step 1: find A coeff
         call localcartesian_coeff ( Rxyz_coord, powers, A_pqr_ijk)
 
-        gamma = sum(powers)
+        
 
         coeff = 0._idp
         ! step 2: iterate over l => this is C^{lm}_{apqr}(r) = <G_{pqr} (a, x,y,z, R) | Y_{lm} (omega)> 
@@ -403,9 +420,6 @@ end subroutine get_coeff_b
     
         ! Calculate total angular momentum (gamma = i + j + k)
         gamma = i + j + k
-    
-        ! Error check: Ensure we have precomputed B coefficients for this gamma
-        if (gamma > max_l) stop "Error: Increase max_l parameter for sufficient B coefficients!"
         
         ! Initialize the sum
         suml2 = 0.d0
@@ -423,7 +437,97 @@ end subroutine get_coeff_b
     
     end function sum_inner_most
     
+!***********************************************************************************************
+! Subroutine: expansion_primitiveS_Ylm
+! Purpose:
+!   This subroutine expands a primitive S-type (spherically symmetric) Gaussian function, centered
+!   at Rxyz_coord, into a series of real spherical harmonics (Ylm). The expansion is evaluated at
+!   specified grid points.
+!
+! Mathematical Background:
+!   The input S-type Gaussian is of the form: 
+!       G_{0,0,0,a} = N_{0,0,0,a} exp[-a (r - R)^2]
+!   The expansion follows these steps:
+!   1. Express the S-type Gaussian in spherical coordinates.
+!   2. Compute modified spherical Bessel functions (si) for each grid point.
+!   3. Calculate real spherical harmonics (Ylm) for the Gaussian center.
+!   4. For each spherical harmonic (l, m):
+!      - Combine the Gaussian, ms Bessel function, and spherical harmonic to get the expansion coefficient.
+!
+! Input:
+!   lmax         (integer) : Maximum spherical harmonic degree (l) to include in the expansion
+!   grid_points  (real(idp)): Array of Cartesian coordinates (x,y,z) where to evaluate the expansion
+!   Rxyz_coord   (real(idp)): Cartesian coordinates (Rx, Ry, Rz) of the Gaussian's center
+!   alpha        (real(idp)): Exponent of the Gaussian function
+!
+! Output:
+!   coeff        (real(idp)): Expansion coefficients for each grid point and each (l,m) pair
+!***********************************************************************************************
 
+    subroutine expansion_primitiveS_Ylm(lmax, grid_points, Rxyz_coord, alpha,coeff)
+
+        ! Input arguments with intent and kind specification
+        integer, intent(in) :: lmax
+        real(kind=idp), intent(in) :: grid_points(:,:) 
+        real(kind=idp), intent(in) :: Rxyz_coord(3) 
+        real(kind=idp), intent(in) :: alpha 
+    
+        ! Output argument (to be allocated inside)
+        real(kind=idp), intent(out), allocatable :: coeff(:,:,:)
+    
+        ! Local variables with modern Fortran declarations
+        integer :: num_gridpts, i, l, m, nm  
+        real(kind=idp), dimension(3) :: RAsph_coord
+        real(kind=idp) :: ra, r, x, mod_bessel
+        real(kind=idp), dimension(:),     allocatable :: si, dsi
+        real(kind=idp), dimension(:,:,:), allocatable :: Ylm
+    
+        ! Constants : pi is taken from the module constants
+        ! real(kind=idp), parameter :: pi = 3.14159265358979323846_idp
+    
+        num_gridpts = size(grid_points, 1)
+    
+        ! Convert Cartesian coordinates of the Gaussian center to spherical coordinates
+        RAsph_coord = cart2sph(Rxyz_coord)
+        ra = RAsph_coord(1)  ! Extract the radial distance
+    
+        ! Calculate real spherical harmonics for the Gaussian center
+        call real_spherical_harmonics(Ylm, [RAsph_coord(2)], [RAsph_coord(3)], 1, lmax)
+    
+        ! Allocate memory for the expansion coefficients
+        allocate(coeff(num_gridpts, 0:lmax, -lmax:lmax))
+
+        !Allocate memory for the modified bessel (si) and its derivative (dsi)
+        allocate(si(0:lmax), dsi(0:lmax))
+    
+        ! Iterate over all grid points
+        do i = 1, num_gridpts
+            ! Calculate the radial distance of the grid point from the origin
+            r = sqrt(dot_product(grid_points(i,:), grid_points(i,:)))
+            ! Calculate the argument for the modified spherical Bessel function
+            x = 2.0_idp * r * ra * alpha
+    
+            ! Calculate modified spherical Bessel functions up to order 4 (sufficient for S-type Gaussian)
+            call sphi(lmax, x, nm, si, dsi)
+    
+            ! Iterate over spherical harmonic degrees (l)
+            do l = 0, lmax
+                ! Calculate the modified spherical Bessel function for the current l
+                mod_bessel = si(l) * exp(-x)
+    
+                ! Iterate over spherical harmonic orders (m)
+                do m = -l, l
+                    ! Calculate the expansion coefficient for the current (l, m) pair
+                    coeff(:, l, m) = 4.0_idp * pi * (2.0_idp * alpha / pi)**(3.0_idp / 4.0_idp) &
+                        * exp(-alpha * (r - ra)**2) * mod_bessel * Ylm(1, l, m)
+                end do
+            end do
+        end do
+    
+    end subroutine expansion_primitiveS_Ylm
+    
+
+        
 
 
 end module
