@@ -11,16 +11,16 @@ module integrals_3rspH_mod
 
     contains
 
-    subroutine read_integrals_3rspH(integrals_3rspH, filename)
+    subroutine read_integrals_3rspH(integrals_3rspH, filename, lmax)
     
         ! Argument declarations with explicit intent and types
         real(kind=8), allocatable, intent(inout) :: integrals_3rspH(:,:,:,:,:,:)
         character(*), intent(in) :: filename  ! Adjust character length in calling program
+        integer,      intent(out) :: lmax
     
         ! Internal variables
-        character(len=100) :: line
         integer :: num_lines = 0, line_indx, l1, l2, l3, m1, m2, m3
-        integer :: ios, lmax
+        integer :: ios
         integer, dimension(6) :: expected_shape
         logical :: exists
     

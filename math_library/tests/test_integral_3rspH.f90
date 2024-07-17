@@ -5,8 +5,9 @@ program test_integral_3rspH
 
     real(idp), allocatable :: integrals(:,:,:,:,:,:)
     character(len=100) :: filename = "../../input/integrals_3rspH.txt"  
+    integer :: lmax
 
-    call read_integrals_3rspH(integrals, filename)
+    call read_integrals_3rspH(integrals, filename, lmax)
 
     ! Now use the 'integrals' array for further calculations
 

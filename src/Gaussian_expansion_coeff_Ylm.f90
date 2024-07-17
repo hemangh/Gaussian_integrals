@@ -10,7 +10,8 @@ use matrix_operations, only: invs
 use factorials_mod, only: compute_factorials, factorial_2n_minus_1
 use integrals_3rspH_mod, only: read_integrals_3rspH
     implicit none
-    ! integer, parameter :: max_l =5 
+    ! Orbitals up to L=4 (f) can be used. This value can be changed by use case
+    integer, parameter :: max_orbital_l = 4
     ! Coefficient of x^i y^j z^k = B^{LM}_{ijk} r^{i+j+k} Y_{LM}   
     ! (L, M, i, j, k)                                    
     real(idp), allocatable  :: xyz_YLM_coefficient(:,:,:,:,:)!(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l) 
@@ -239,7 +240,7 @@ end subroutine get_coeff_b
 !***********************************************************************************************
 
     subroutine expansion_primitiveG_Ylm(lmax, grid_points, powers, Rxyz_coord, alpha,coeff)
-        integer, intent(in) :: lmax
+        integer, intent(inout) :: lmax
         real(idp), intent(in) :: grid_points(:,:) !(num of points, 1:3 (x,y,z)) cartesian coord
         integer, intent(in) :: powers(3) ! (x,y,z)
         real(idp), intent(in) :: Rxyz_coord(3) !(Rx, Ry, Rz)
@@ -252,7 +253,8 @@ end subroutine get_coeff_b
         integer :: igrid, num_gridpts
         integer :: nm
         integer :: l1, l2_min, l2_max, l2, m1, m2
-        integer :: max_l
+        integer :: max_l, int_lmax
+        integer, save :: upper_l
         
 
 
@@ -271,9 +273,22 @@ end subroutine get_coeff_b
         real(idp) :: sum
         
 
-        gamma = sum(powers)
 
-        max_l = lmax + gamma
+                ! Read all the integrals of 3 real spherical harmonics
+        ! Goes l1, l2, l3, m1, m2, m3
+        if (.not. set_3Ylm_integrals) then
+
+            call read_integrals_3rspH(integrals_3rspH, "../../input/integrals_3rspH.txt", int_lmax)
+
+            set_3Ylm_integrals = .true.
+            upper_l =  int_lmax - max_orbital_l
+            print'(A,x,I0,x,A)', "Note: only lmax of up to l= ", upper_l, "can be used."
+
+        end if
+
+        if(lmax > upper_l) lmax = upper_l
+
+        max_l = lmax + max_orbital_l 
         
         if (.not. set_xyz_YLM) then
             allocate(xyz_YLM_coefficient(0:max_l, -max_l:max_l, 0:max_l, 0:max_l, 0:max_l))
@@ -284,16 +299,6 @@ end subroutine get_coeff_b
              set_xyz_YLM = .true.
         end if
  
-
-        ! Read all the integrals of 3 real spherical harmonics
-        ! Goes l1, l2, l3, m1, m2, m3
-        if (.not. set_3Ylm_integrals) then
-
-            call read_integrals_3rspH(integrals_3rspH, "../../input/integrals_3rspH.txt")
-
-            set_3Ylm_integrals = .true.
-
-        end if
 
         ! step 0: convert cartesian to spherical
         num_gridpts = size(grid_points,1)
@@ -312,6 +317,8 @@ end subroutine get_coeff_b
         allocate(bessel_argument(num_gridpts))
         allocate(si(0:max_l), dsi(0:max_l)) 
         allocate(mod_bessel(num_gridpts,0:max_l))
+        gamma = sum(powers)
+
 
         ! some preperations:
         ! find the modified Bessel functions over grid points:

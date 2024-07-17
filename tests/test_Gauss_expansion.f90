@@ -27,10 +27,10 @@ program test_Gauss_expansion
     
     type(Lebedev_type) :: leb_quad
 
-    integer, parameter :: lmax = 4
+    integer :: lmax = 4
 
-    REAL(kind = idp ), DIMENSION(0:2*lmax) :: si
-    REAL(kind = idp ), DIMENSION(0:2*lmax) :: dsi
+    REAL(kind = idp ), allocatable :: si(:)
+    REAL(kind = idp ), allocatable :: dsi(:)
 
     ! Test Case: 1
     ! Test against the known expression for s function: G_{000} (r)
@@ -42,7 +42,8 @@ program test_Gauss_expansion
  ! scale the grid points:
     scale = 1.0_idp
 
-    allocate(bi(0:2*lmax), di(0:2*lmax),bk(0:2*lmax),dk(0:2*lmax))
+    allocate(si(0:2*lmax), dsi(0:2*lmax))
+
 
     call generate_random_points(num_pt, grid_point)
 
